@@ -26,4 +26,13 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+protected:
+	UPROPERTY(VisibleAnywhere, Category = "BoxComp")
+	class UBoxComponent* TriggerVolume;
+
+	UPROPERTY(EditAnywhere, Category = "SkeleMeshComp")
+	class USkeletalMeshComponent* SkeletonMesh;
+
+	UPROPERTY(EditAnywhere, Category = "SpringcComp")
+	class USpringArmComponent* SpringArm;
 };
