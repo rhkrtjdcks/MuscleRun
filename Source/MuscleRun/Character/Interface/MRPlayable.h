@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -14,7 +14,8 @@ class UMRPlayable : public UInterface
 };
 
 /**
- * 
+ * Character 에게 자격을 부여하는 인터페이스입니다.
+ * Object의 장애물과 Item들이 이 자격을 확인합니다.
  */
 class MUSCLERUN_API IMRPlayable
 {

@@ -11,9 +11,7 @@
 
 /*
 * 움직이는 적(장애물)에 대한 클래스입니다.
-* 가독성을 위해, 또 구현이 직관적이기에 (종류가 하나뿐일 것)
-* 한 개의 클래스로 압축했습니다.
-* Blueprint로 상속받아 각각의 메쉬를 새로 할당하는 것을 추천합니다.
+* 새로운 적을 설계할 경우 Blueprint로 상속받아 각각의 메쉬를 새로 할당하는 것을 추천합니다.
 */
 UCLASS(Blueprintable)
 class MUSCLERUN_API AMREnemyFloater : public AMRObsrtuctBase
@@ -32,6 +30,14 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-protected:
-	virtual void MakeDamage_Implementation(float DamageAmount) override;
+public:
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE float GetEnemySpeed() const;
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void SetEnemySpeed(const float NewSpeed);
+
+private:
+	// 속도입니다. Setter, Getter API 함수를 제공합니다. (상단)
+	float EnemySpeed = 10.0f;
 };

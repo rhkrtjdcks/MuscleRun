@@ -28,7 +28,19 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 protected:
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Obstruct")
-	void MakeDamage(float DamageAmount);
+	// 메쉬 컴포넌트입니다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Obstruct", meta = (AllowPrivateAccess = "true"))
+	class UStaticMeshComponent* MeshComponent;
+
+	// 오버래핑 이벤트 발생을 위한 트리거 볼륨입니다.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Obstruct", meta = (AllowPrivateAccess = "true"))
+	class UBoxComponent* TriggerVolume;
+
+	UFUNCTION(BlueprintCallable, Category = "Obstruct")
+	virtual void MakeDamage(AActor* OtherActor, float DamageAmount);
+
+	// 오버래핑 시작 시 함수입니다. 요구 인자가 매우 많으니 검색해서 작성해주세요.
+	// UFUNCTION() // 델리게이트에 바인딩할 함수는 UFUNCTION 리플렉션 매크로가 필요합니다.
+	// void OnOvelappingStarted(...);
 
 };

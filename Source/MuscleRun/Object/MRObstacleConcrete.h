@@ -14,5 +14,15 @@ UCLASS()
 class MUSCLERUN_API AMRObstacleConcrete : public AMRObsrtuctBase
 {
 	GENERATED_BODY()
+
+public:
+	AMRObstacleConcrete();
+
+protected:
+	virtual void BeginPlay() override;
+
+	virtual void Tick(float DeltaTime) override;
+
+protected:
 	
 };
