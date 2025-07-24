@@ -3,3 +3,12 @@
 
 #include "SubSystem/MRLevelStreamSubSystem.h"
 
+void UMRLevelStreamSubSystem::RequestLevelLoad(FName LevelToLoad)
+{
+
+}
+
+void UMRLevelStreamSubSystem::RequestLevelUnload(FName LevelToUnlaod)
+{
+
+}
