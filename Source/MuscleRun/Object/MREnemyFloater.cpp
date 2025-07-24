@@ -25,3 +25,8 @@ void AMREnemyFloater::Tick(float DeltaTime)
 
 }
 
+void AMREnemyFloater::MakeDamage_Implementation(float DamageAmount)
+{
+
+}
+

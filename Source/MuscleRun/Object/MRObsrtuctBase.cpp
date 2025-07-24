@@ -25,3 +25,8 @@ void AMRObsrtuctBase::Tick(float DeltaTime)
 
 }
 
+void AMRObsrtuctBase::MakeDamage_Implementation(float DamageAmount)
+{
+
+}
+

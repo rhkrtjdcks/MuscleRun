@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-#include "Interface/Obstructable.h"
+#include "MRObsrtuctBase.h"
 
 #include "GameFramework/Actor.h"
 #include "MREnemyFloater.generated.h"
@@ -16,7 +16,7 @@
 * Blueprint로 상속받아 각각의 메쉬를 새로 할당하는 것을 추천합니다.
 */
 UCLASS(Blueprintable)
-class MUSCLERUN_API AMREnemyFloater : public AActor, public IObstructable
+class MUSCLERUN_API AMREnemyFloater : public AMRObsrtuctBase
 {
 	GENERATED_BODY()
 	
@@ -32,4 +32,6 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+protected:
+	virtual void MakeDamage_Implementation(float DamageAmount) override;
 };
