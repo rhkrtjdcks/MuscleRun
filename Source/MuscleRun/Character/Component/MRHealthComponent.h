@@ -6,6 +6,15 @@
 #include "Components/ActorComponent.h"
 #include "MRHealthComponent.generated.h"
 
+/*
+* MRPlayerCharacter의 체력을 관리하는 컴포넌트입니다.
+* 필수적으로 구현해야 할 것들은 다음과 같습니다.
+* 1. 체력
+* 2. 체력을 회복하는 로직, 체력이 감소되는 로직
+* 3. 체력이 낮아졌을 때, 체력이 0이 되었을 때 델리게이트를 통해 BroadCast합니다.
+* 변경 및 확장의 필요성을 느끼신다면 고민없이 그렇게 해주세요! 다만 이야기해주세요!
+* UPROPERTY, UFUNCTION과 리플렉션 인자들은 생각해서 넣어주세요.
+*/
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MUSCLERUN_API UMRHealthComponent : public UActorComponent
@@ -24,5 +33,24 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-		
+public:
+	// 주로 Character에게서 호출되는 체력이 감소되는 함수입니다.
+	void GetDamage(float Amount);
+
+	// 체력을 회복하는 함수입니다.
+	void Heal(float Amount);
+
+	/*
+	* 여기 델리게이트 인자를 선언해주세요!
+	*/
+
+private:
+	// 체력입니다.
+	float Health;
+
+	// 체력이 줄어들었을 때의 상태를 알리기 위한 델리게이트 선언입니다.
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, HealthAmount);
+
+	// 체력이 0이 되었을 때의 상태를 알리기 위한 델리게이트 선언입니다.
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealthBecomeToZero);
 };

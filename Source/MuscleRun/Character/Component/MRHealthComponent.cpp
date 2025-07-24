@@ -32,3 +32,13 @@ void UMRHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	// ...
 }
 
+void UMRHealthComponent::GetDamage(float Amount)
+{
+
+}
+
+void UMRHealthComponent::Heal(float Amount)
+{
+
+}
+
