@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -7,14 +7,19 @@
 #include "MRHealthComponent.generated.h"
 
 /*
-* MRPlayerCharacterÀÇ Ã¼·ÂÀ» °ü¸®ÇÏ´Â ÄÄÆ÷³ÍÆ®ÀÔ´Ï´Ù.
-* ÇÊ¼öÀûÀ¸·Î ±¸ÇöÇØ¾ß ÇÒ °ÍµéÀº ´ÙÀ½°ú °°½À´Ï´Ù.
-* 1. Ã¼·Â
-* 2. Ã¼·ÂÀ» È¸º¹ÇÏ´Â ·ÎÁ÷, Ã¼·ÂÀÌ °¨¼ÒµÇ´Â ·ÎÁ÷
-* 3. Ã¼·ÂÀÌ ³·¾ÆÁ³À» ¶§, Ã¼·ÂÀÌ 0ÀÌ µÇ¾úÀ» ¶§ µ¨¸®°ÔÀÌÆ®¸¦ ÅëÇØ BroadCastÇÕ´Ï´Ù.
-* º¯°æ ¹× È®ÀåÀÇ ÇÊ¿ä¼ºÀ» ´À³¢½Å´Ù¸é °í¹Î¾øÀÌ ±×·¸°Ô ÇØÁÖ¼¼¿ä! ´Ù¸¸ ÀÌ¾ß±âÇØÁÖ¼¼¿ä!
-* UPROPERTY, UFUNCTION°ú ¸®ÇÃ·º¼Ç ÀÎÀÚµéÀº »ı°¢ÇØ¼­ ³Ö¾îÁÖ¼¼¿ä.
+* MRPlayerCharacterì˜ ì²´ë ¥ì„ ê´€ë¦¬í•˜ëŠ” ì»´í¬ë„ŒíŠ¸ì…ë‹ˆë‹¤.
+* í•„ìˆ˜ì ìœ¼ë¡œ êµ¬í˜„í•´ì•¼ í•  ê²ƒë“¤ì€ ë‹¤ìŒê³¼ ê°™ìŠµë‹ˆë‹¤.
+* 1. ì²´ë ¥
+* 2. ì²´ë ¥ì„ íšŒë³µí•˜ëŠ” ë¡œì§, ì²´ë ¥ì´ ê°ì†Œë˜ëŠ” ë¡œì§
+* 3. ì²´ë ¥ì´ ë‚®ì•„ì¡Œì„ ë•Œ, ì²´ë ¥ì´ 0ì´ ë˜ì—ˆì„ ë•Œ ë¸ë¦¬ê²Œì´íŠ¸ë¥¼ í†µí•´ BroadCastí•©ë‹ˆë‹¤.
+* ë³€ê²½ ë° í™•ì¥ì˜ í•„ìš”ì„±ì„ ëŠë¼ì‹ ë‹¤ë©´ ê³ ë¯¼ì—†ì´ ê·¸ë ‡ê²Œ í•´ì£¼ì„¸ìš”! ë‹¤ë§Œ ì´ì•¼ê¸°í•´ì£¼ì„¸ìš”!
+* UPROPERTY, UFUNCTIONê³¼ ë¦¬í”Œë ‰ì…˜ ì¸ìë“¤ì€ ìƒê°í•´ì„œ ë„£ì–´ì£¼ì„¸ìš”.
 */
+// ì²´ë ¥ì´ ì¤„ì–´ë“¤ì—ˆì„ ë•Œì˜ ìƒíƒœë¥¼ ì•Œë¦¬ê¸° ìœ„í•œ ë¸ë¦¬ê²Œì´íŠ¸ ì„ ì–¸ì…ë‹ˆë‹¤.
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, HealthAmount);
+
+// ì²´ë ¥ì´ 0ì´ ë˜ì—ˆì„ ë•Œì˜ ìƒíƒœë¥¼ ì•Œë¦¬ê¸° ìœ„í•œ ë¸ë¦¬ê²Œì´íŠ¸ ì„ ì–¸ì…ë‹ˆë‹¤.
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealthBecomeToZero);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MUSCLERUN_API UMRHealthComponent : public UActorComponent
@@ -28,29 +33,33 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	UPROPERTY(EditDefaultsOnly, Category = "Health") //ìµœëŒ€ ì²´ë ¥ ê°’ ë¸”ë£¨ í”„ë¦°íŠ¸ì—ì„œ ì½ê¸°ë§Œ ê°€ëŠ¥í•˜ê³  ìˆ˜ì •ì€ ì—ë””í„°ì—ì„œ ê°€ëŠ¥
+	float MaxHealth = 100.0f;
+
+	UPROPERTY(VisibleAnywhere) // í˜„ì¬ ì²´ë ¥ ê°’ /ì–´ë””ì„œë“  ë³¼ ìˆ˜ ìˆì§€ë§Œ ì§ì ‘ ìˆ˜ì •ì€ ì•ˆë¨
+	float CurrentHealth;
 
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
-	// ÁÖ·Î Character¿¡°Ô¼­ È£ÃâµÇ´Â Ã¼·ÂÀÌ °¨¼ÒµÇ´Â ÇÔ¼öÀÔ´Ï´Ù.
-	void GetDamage(float Amount);
-
-	// Ã¼·ÂÀ» È¸º¹ÇÏ´Â ÇÔ¼öÀÔ´Ï´Ù.
-	void Heal(float Amount);
+	// ì²´ë ¥ì¡°ì‘
+	void GetDamage(float Amount); // ì£¼ë¡œ Characterì—ê²Œì„œ í˜¸ì¶œë˜ëŠ” ì²´ë ¥ì´ ê°ì†Œë˜ëŠ” í•¨ìˆ˜ì…ë‹ˆë‹¤.
+	void Heal(float Amount); // ì²´ë ¥ì„ íšŒë³µí•˜ëŠ” í•¨ìˆ˜ì…ë‹ˆë‹¤.
 
 	/*
-	* ¿©±â µ¨¸®°ÔÀÌÆ® ÀÎÀÚ¸¦ ¼±¾ğÇØÁÖ¼¼¿ä!
+	* ì—¬ê¸° ë¸ë¦¬ê²Œì´íŠ¸ ì¸ìë¥¼ ì„ ì–¸í•´ì£¼ì„¸ìš”!
 	*/
+	UPROPERTY(BlueprintAssignable)			//ë¸”ë£¨ í”„ë¦°íŠ¸ì—ì„œ ì²´ë ¥ë³€í™”, 0ì´ë²¤íŠ¸ì— ë°”ì¸ë”© í•  ìˆ˜ìˆê²Œ ì„ ì–¸ëœ Delegateë³€ìˆ˜
+	FOnHealthChanged OnHealthChanged;			
+
+	UPROPERTY(BlueprintAssignable)
+	FOnHealthBecomeToZero OnHealthBecomeToZero;
 
 private:
-	// Ã¼·ÂÀÔ´Ï´Ù.
+	// ì²´ë ¥ì…ë‹ˆë‹¤.
 	float Health;
 
-	// Ã¼·ÂÀÌ ÁÙ¾îµé¾úÀ» ¶§ÀÇ »óÅÂ¸¦ ¾Ë¸®±â À§ÇÑ µ¨¸®°ÔÀÌÆ® ¼±¾ğÀÔ´Ï´Ù.
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, HealthAmount);
 
-	// Ã¼·ÂÀÌ 0ÀÌ µÇ¾úÀ» ¶§ÀÇ »óÅÂ¸¦ ¾Ë¸®±â À§ÇÑ µ¨¸®°ÔÀÌÆ® ¼±¾ğÀÔ´Ï´Ù.
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealthBecomeToZero);
 };
