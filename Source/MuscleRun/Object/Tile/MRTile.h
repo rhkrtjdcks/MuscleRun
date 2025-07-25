@@ -73,7 +73,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "MRTile")
 	TArray<FMRObjectAnchorInfo> ObstacleArray;
 
-	UPROPERTY(EditAnywhere, Category = "Tile")
+	UPROPERTY(EditAnywhere, Category = "MRTile")
 	TArray<FMRObjectAnchorInfo> PropArray;
 
 	UPROPERTY()

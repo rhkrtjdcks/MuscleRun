@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Character/Component/MREffectBaseComponent.h"
+#include "Object/Item/Component/MREffectBaseComponent.h"
 
 // Sets default values for this component's properties
 UMREffectBaseComponent::UMREffectBaseComponent()
