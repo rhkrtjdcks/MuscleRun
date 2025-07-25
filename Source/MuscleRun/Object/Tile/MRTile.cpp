@@ -84,6 +84,7 @@ void AMRTile::UpdatePropsFromComponents()
 
 void AMRTile::GenerateComponentsFromInfo(const TArray<FMRObjectAnchorInfo>& ObjectInfoArray, TArray<TObjectPtr<UStaticMeshComponent>>& SpawnedObjectArray, const FString& NamePrefix)
 {
+	// 기존에 생성된 컴포넌트들 파괴
 	for (TObjectPtr<UStaticMeshComponent> Comp : SpawnedObjectArray)
 	{
 		if (IsValid(Comp))
@@ -95,32 +96,36 @@ void AMRTile::GenerateComponentsFromInfo(const TArray<FMRObjectAnchorInfo>& Obje
 
 	for (int32 i = 0; i < ObjectInfoArray.Num(); ++i)
 	{
-		const FMRObjectAnchorInfo ObjectInfo = ObjectInfoArray[i];
+		const FMRObjectAnchorInfo& ObjectInfo = ObjectInfoArray[i];
 		if (IsValid(ObjectInfo.StaticMesh))
 		{
-			TObjectPtr<UStaticMeshComponent> NewMeshComp = Cast<UStaticMeshComponent>(
-				AddComponentByClass(
-					UStaticMeshComponent::StaticClass(),
-					false,
-					ObjectInfo.ObjectTransform,
-					false
-				)
-			);
+			// 1. 컴포넌트 생성 (고유한 이름 보장을 위해 MakeUniqueObjectName 사용을 권장)
+			const FName CompName = MakeUniqueObjectName(this, UStaticMeshComponent::StaticClass(), *FString::Printf(TEXT("SpawnedMesh_%s_%d"), *NamePrefix, i));
+			TObjectPtr<UStaticMeshComponent> NewMeshComp = NewObject<UStaticMeshComponent>(this, CompName);
 
 			if (ensure(NewMeshComp))
 			{
-				NewMeshComp->Rename(*FString::Printf(TEXT("SpawnedMesh_%s_%d"), *NamePrefix, i));
+				// 2. 컴포넌트가 Construction Script에서 생성되었음을 에디터에 알림
 				NewMeshComp->CreationMethod = EComponentCreationMethod::UserConstructionScript;
-				//NewMeshComp->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-				//NewMeshComp->SetRelativeTransform(ObjectInfo.ObjectTransform);
+
+				// 3. 액터의 인스턴스 컴포넌트로 추가
+				AddInstanceComponent(NewMeshComp);
+
+				// 4. 컴포넌트를 씬 계층 구조에 부착
+				NewMeshComp->SetupAttachment(GetRootComponent());
+
+				// 5. 컴포넌트 속성 설정
+				NewMeshComp->SetRelativeTransform(ObjectInfo.ObjectTransform);
 				NewMeshComp->SetStaticMesh(ObjectInfo.StaticMesh);
-				//NewMeshComp->RegisterComponent();
+
+				// 6. 컴포넌트 최종 등록 및 활성화 (가장 중요)
+				NewMeshComp->RegisterComponent();
+
 				SpawnedObjectArray.Add(NewMeshComp);
 			}
 		}
 	}
 }
-
 FORCEINLINE FTransform AMRTile::GetTileTransform() const
 {
 	return GetActorTransform();

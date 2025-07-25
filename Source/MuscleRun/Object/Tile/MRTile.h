@@ -60,17 +60,17 @@ protected:
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-    UFUNCTION(CallInEditor, Category = "Tile|Actions")
+    UFUNCTION(CallInEditor, Category = "MRTile")
     void UpdateObstaclesFromComponents();
 
-    UFUNCTION(CallInEditor, Category = "Tile|Actions")
+    UFUNCTION(CallInEditor, Category = "MRTile")
     void UpdatePropsFromComponents();
 
 private:
-	UPROPERTY(VisibleAnywhere, Category = "Tile")
+	UPROPERTY(VisibleAnywhere, Category = "MRTile")
 	class UStaticMeshComponent* MeshComp;
 
-	UPROPERTY(EditAnywhere, Category = "Tile")
+	UPROPERTY(EditAnywhere, Category = "MRTile")
 	TArray<FMRObjectAnchorInfo> ObstacleArray;
 
 	UPROPERTY(EditAnywhere, Category = "Tile")
