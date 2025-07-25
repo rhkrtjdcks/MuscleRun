@@ -47,8 +47,8 @@ void AMRTile::OnConstruction(const FTransform& Transform)
 	Super::OnConstruction(Transform);
 
 	// 에디터가 변경될 경우 다음 함수들을 실행해서 생성한 오브젝트들을 관리합니다.
-	GenerateComponentsFromInfo(ObstacleArray, SpawnedObstacleArray, TEXT("Obstacle"));
-	GenerateComponentsFromInfo(PropArray, SpawnedPropArray, TEXT("Prop"));
+	UpdateComponentsFromInfo(ObstacleArray, IDToComponentObstacleMap, TEXT("Obstacle"));
+	UpdateComponentsFromInfo(PropArray, IDToComponentPropMap, TEXT("Prop"));
 }
 
 /*
@@ -56,25 +56,30 @@ void AMRTile::OnConstruction(const FTransform& Transform)
 * 이 CallInEditor 리플렉션 프로퍼티로 선언한 함수로 버튼을 에디터에 노출시켜,
 * 기즈모를 통해 변경한 값을 쉽게 디자이너가 적용할 수 있도록 만듭니다.
 */
-void AMRTile::UpdateObstaclesFromComponents()
+void AMRTile::SaveGizmoChangeForObstacle()
 {
-	// Spawned 배열과 데이터 배열의 개수가 같은지 확인 (안전장치)
-	if (SpawnedObstacleArray.Num() != ObstacleArray.Num())
+	// 컴포넌트 맵을 순회하여, 현재 컴포넌트의 상태를 데이터 배열에 덮어쓴다.
+	for (const auto& Pair : IDToComponentObstacleMap)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Obstacle component count and data count do not match. Re-run OnConstruction."));
-		return;
-	}
+		const FGuid& ObjectID = Pair.Key;
+		const UStaticMeshComponent* Comp = Pair.Value;
 
-	for (int32 i = 0; i < SpawnedObstacleArray.Num(); ++i)
-	{
-		if (IsValid(SpawnedObstacleArray[i]))
+		if (IsValid(Comp))
 		{
-			// 컴포넌트의 현재 트랜스폼을 가져와 데이터 배열에 저장합니다.
-			ObstacleArray[i].ObjectTransform = SpawnedObstacleArray[i]->GetRelativeTransform();
+			// ObstacleArray에서 이 ID를 가진 Info를 찾는다.
+			// 이 과정은 배열이 크면 비효율적일 수 있지만, CallInEditor 함수에서는 괜찮다.
+			for (FMRObjectAnchorInfo& Info : ObstacleArray)
+			{
+				if (Info.ObjectID == ObjectID)
+				{
+					// 찾았다면, 컴포넌트의 현재 트랜스폼을 데이터에 저장한다.
+					Info.ObjectTransform = Comp->GetRelativeTransform();
+					break; // 해당 ID에 대한 작업이 끝났으므로 안쪽 루프 탈출
+				}
+			}
 		}
 	}
-
-	UE_LOG(LogTemp, Log, TEXT("Obstacle Array data has been updated from components."));
+	UE_LOG(LogTemp, Log, TEXT("Gizmo changes for obstacles have been saved to the data array."));
 }
 
 /*
@@ -82,97 +87,98 @@ void AMRTile::UpdateObstaclesFromComponents()
 * 이 CallInEditor 리플렉션 프로퍼티로 선언한 함수로 버튼을 에디터에 노출시켜,
 * 기즈모를 통해 변경한 값을 쉽게 디자이너가 적용할 수 있도록 만듭니다.
 */ 
-void AMRTile::UpdatePropsFromComponents()
+void AMRTile::SaveGizmoChangeForProp()
 {
-	if (SpawnedPropArray.Num() != PropArray.Num())
+	// 컴포넌트 맵을 순회하여, 현재 컴포넌트의 상태를 데이터 배열에 덮어쓴다.
+	for (const auto& Pair : IDToComponentPropMap)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Prop component count and data count do not match. Re-run OnConstruction."));
-		return;
-	}
-	for (int32 i = 0; i < SpawnedPropArray.Num(); ++i)
-	{
-		if (IsValid(SpawnedPropArray[i]))
+		const FGuid& ObjectID = Pair.Key;
+		const UStaticMeshComponent* Comp = Pair.Value;
+
+		if (IsValid(Comp))
 		{
-			PropArray[i].ObjectTransform = SpawnedPropArray[i]->GetRelativeTransform();
+			// ObstacleArray에서 이 ID를 가진 Info를 찾는다.
+			// 이 과정은 배열이 크면 비효율적일 수 있지만, CallInEditor 함수에서는 괜찮다.
+			for (FMRObjectAnchorInfo& Info : PropArray)
+			{
+				if (Info.ObjectID == ObjectID)
+				{
+					// 찾았다면, 컴포넌트의 현재 트랜스폼을 데이터에 저장한다.
+					Info.ObjectTransform = Comp->GetRelativeTransform();
+					break; // 해당 ID에 대한 작업이 끝났으므로 안쪽 루프 탈출
+				}
+			}
 		}
 	}
-	UE_LOG(LogTemp, Log, TEXT("Obstacle Array data has been updated from components."));
+	UE_LOG(LogTemp, Log, TEXT("Gizmo changes for props have been saved to the data array."));
 }
 
-void AMRTile::GenerateComponentsFromInfo(const TArray<FMRObjectAnchorInfo>& ObjectInfoArray, TArray<TObjectPtr<UStaticMeshComponent>>& SpawnedObjectArray, const FString& NamePrefix)
+void AMRTile::UpdateComponentsFromInfo(const TArray<FMRObjectAnchorInfo>& ObjectInfoArray, TMap<FGuid, TObjectPtr<UStaticMeshComponent>>& IDToComponentMap, const FString& NamePrefix)
 {
-	const int32 DataNum = ObjectInfoArray.Num();
-	const int32 ComponentNum = SpawnedObjectArray.Num();
-
-
-	// 요소가 삭제되었을 경우. 어떤 요소가 삭제된 지 모름, 컴포넌트를 전부 파괴한 후 재생성.
-	// 요소가 추가되었을 직후. 요소가 추가되어 비어있는 상태, 어느 부분에 삽입된지 알 수 없다.
-	// 추후의 동기화 로직의 간편화를 위해 컴포넌트를 전부 파괴하고 재생성.
-	if (DataNum != ComponentNum)
+	// 1단계: 현재 데이터에 있는 ID들을 모두 TSet에 모은다. (빠른 조회를 위함)
+	TSet<FGuid> CurrentDataIDs;
+	for (const auto& Info : ObjectInfoArray)
 	{
-		// 기존에 생성된 컴포넌트들 파괴
-		for (TObjectPtr<UStaticMeshComponent> Comp : SpawnedObjectArray)
+		CurrentDataIDs.Add(Info.ObjectID);
+	}
+
+	// 2단계: 현재 생성된 컴포넌트들(IDToComponentMap)을 순회하며,
+	// 더 이상 데이터에 존재하지 않는 ID를 가진 컴포넌트는 파괴한다.
+	TArray<FGuid> ObsoleteIDs;
+	for (const auto& Pair : IDToComponentMap)
+	{
+		if (!CurrentDataIDs.Contains(Pair.Key))
 		{
-			if (IsValid(Comp))
+			if (IsValid(Pair.Value))
 			{
-				Comp->DestroyComponent();
+				Pair.Value->DestroyComponent();
 			}
-		}
-		SpawnedObjectArray.Empty();
-
-		for (int32 i = 0; i < ObjectInfoArray.Num(); ++i)
-		{
-			const FMRObjectAnchorInfo& ObjectInfo = ObjectInfoArray[i];
-			// 1. 컴포넌트 생성 (고유한 이름 보장을 위해 MakeUniqueObjectName 사용을 권장)
-			const FName CompName = MakeUniqueObjectName(this, UStaticMeshComponent::StaticClass(), *FString::Printf(TEXT("SpawnedMesh_%s_%d"), *NamePrefix, i));
-			TObjectPtr<UStaticMeshComponent> NewMeshComp = NewObject<UStaticMeshComponent>(this, CompName);
-
-			if (ensure(NewMeshComp))
-			{
-				// 2. 컴포넌트가 Construction Script에서 생성되었음을 에디터에 알림
-				NewMeshComp->CreationMethod = EComponentCreationMethod::UserConstructionScript;
-
-				// 3. 액터의 인스턴스 컴포넌트로 추가
-				AddInstanceComponent(NewMeshComp);
-
-				// 4. 컴포넌트를 씬 계층 구조에 부착
-				NewMeshComp->SetupAttachment(GetRootComponent());
-
-				// 5. 컴포넌트 속성 설정
-				// (추가) DataNum > ComponentNum일때는 빈 컴포넌트를 생성합니다.
-				if (IsValid(ObjectInfo.StaticMesh))
-				{
-					NewMeshComp->SetRelativeTransform(ObjectInfo.ObjectTransform);
-					NewMeshComp->SetStaticMesh(ObjectInfo.StaticMesh);
-				}
-
-				// 6. 컴포넌트 최종 등록 및 활성화 (가장 중요)
-				NewMeshComp->RegisterComponent();
-
-				SpawnedObjectArray.Add(NewMeshComp);
-			}
+			ObsoleteIDs.Add(Pair.Key);
 		}
 	}
-	// 두 개의 배열 숫자가 같을 경우입니다. 삭제 및 생성을 하지 않아 OnConstruction 함수를 최적화합니다.
-	else
+	// 맵에서 파괴된 컴포넌트 정보 제거
+	for (const FGuid& ID : ObsoleteIDs)
 	{
-		for (int i = 0; i < DataNum; ++i)
-		{
-			const FMRObjectAnchorInfo& Info = ObjectInfoArray[i];
-			UStaticMeshComponent* Comp = SpawnedObjectArray[i];
+		IDToComponentMap.Remove(ID);
+	}
 
+	// 3단계: 데이터 배열을 순회하며, 각 데이터를 기준으로 컴포넌트를 업데이트하거나 생성한다.
+	for (const auto& Info : ObjectInfoArray)
+	{
+		// 이 ID를 가진 컴포넌트가 이미 맵에 존재하는가?
+		if (TObjectPtr<UStaticMeshComponent>* ExistingCompPtr = IDToComponentMap.Find(Info.ObjectID))
+		{
+			// [업데이트]
+			// 이미 존재한다! 파괴하지 않고 속성만 업데이트한다.
+			// 이러면 머티리얼 같은 다른 설정이 그대로 보존된다.
+			UStaticMeshComponent* Comp = *ExistingCompPtr;
 			if (IsValid(Comp))
 			{
-				// 데이터와 다른 경우에만 속성을 설정하여 불필요한 연산을 줄일 수도 있다.
-				if (Comp->GetStaticMesh() != Info.StaticMesh)
-				{
-					Comp->SetStaticMesh(Info.StaticMesh);
-				}
-				if (Comp->GetRelativeTransform().Equals(Info.ObjectTransform) == false)
-				{
-					Comp->SetRelativeTransform(Info.ObjectTransform);
-				}
+				Comp->SetStaticMesh(Info.StaticMesh);
+				Comp->SetRelativeTransform(Info.ObjectTransform);
 			}
+		}
+		else
+		{
+
+			
+
+			// [생성]
+			// 존재하지 않는다! 이것은 새로 추가된 데이터다.
+			// 새로운 컴포넌트를 생성하고 맵에 추가한다.
+			// (이전에 만들었던 컴포넌트 생성 로직 사용)
+
+			const FName CompName = MakeUniqueObjectName(this, UStaticMeshComponent::StaticClass(), *FString::Printf(TEXT("SpawnedMesh_%s_%s"), *NamePrefix, *Info.ObjectID.ToString()));
+			TObjectPtr<UStaticMeshComponent> NewMeshComp = NewObject<UStaticMeshComponent>(this, CompName);
+
+
+			NewMeshComp->CreationMethod = EComponentCreationMethod::UserConstructionScript;
+			AddInstanceComponent(NewMeshComp);
+			NewMeshComp->SetupAttachment(GetRootComponent());
+			NewMeshComp->SetStaticMesh(Info.StaticMesh);
+			NewMeshComp->SetRelativeTransform(Info.ObjectTransform);
+			NewMeshComp->RegisterComponent();
+			IDToComponentMap.Add(Info.ObjectID, NewMeshComp);
 		}
 	}
 }
