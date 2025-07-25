@@ -8,6 +8,10 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTileManagerActionStarted, AActor*, ThisActor);
 
+/*
+* 타일에 오브젝트를 배치할 정보를 가진 구조체입니다.
+* 이 정보를 바탕으로 컴포넌트를 만들고 디자이너가 배치하도록 합니다.
+*/
 USTRUCT(BlueprintType)
 struct FMRObjectAnchorInfo
 {
@@ -39,37 +43,55 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 public:
 	// 에디터 노출을 시키지 않습니다.
 	FOnTileManagerActionStarted OnTileGeneratedOvelaped;
 
 public:
 	UFUNCTION()
-	void GetTileTransform();
+	FORCEINLINE FTransform GetTileTransform() const;
 
 	UFUNCTION()
-	void SetTileTransform();
+	FORCEINLINE void SetTileTransform(const FTransform& NewTransform);
 
 protected:
 	UFUNCTION()
-	void OnOverlapBeginned();
+	void OnOverlapBegin(class UPrimitiveComponent* OverlappedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	virtual void OnConstruction(const FTransform& Transform) override;
+
+    UFUNCTION(CallInEditor, Category = "Tile|Actions")
+    void UpdateObstaclesFromComponents();
+
+    UFUNCTION(CallInEditor, Category = "Tile|Actions")
+    void UpdatePropsFromComponents();
 
 private:
-	UPROPERTY(EditAnywhere, Category = "Tile", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, Category = "Tile")
 	class UStaticMeshComponent* MeshComp;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Tile", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Tile")
 	TArray<FMRObjectAnchorInfo> ObstacleArray;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Tile", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Tile")
 	TArray<FMRObjectAnchorInfo> PropArray;
 
-	class USceneComponent* TransformComp;
+	UPROPERTY()
+	class USceneComponent* DefaultScene;
 
+	UPROPERTY()
 	class UBoxComponent* TriggerVolume;
+
+	UPROPERTY()
+	TArray<TObjectPtr<UStaticMeshComponent>> SpawnedObstacleArray;
+
+	UPROPERTY()
+	TArray<TObjectPtr<UStaticMeshComponent>> SpawnedPropArray;
+
+
+
+
+private:
+	void GenerateComponentsFromInfo(const TArray<FMRObjectAnchorInfo>& ObjectArray, TArray<TObjectPtr<UStaticMeshComponent>>& SpawnedObject, const FString& NamePrefix);
 
 };
