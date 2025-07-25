@@ -3,6 +3,7 @@
 
 #include "Object/Tile/MRTile.h"
 #include "Components/BoxComponent.h"
+#include "Components/ArrowComponent.h"
 #include "GameFramework/Actor.h"
 
 // Sets default values
@@ -17,8 +18,12 @@ AMRTile::AMRTile()
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>("MeshComp_TileEntire");
 	MeshComp->SetupAttachment(DefaultScene);
 
+	StartArrowComponent = CreateDefaultSubobject<UArrowComponent>("StartArrow");
+	EndArrowComponent = CreateDefaultSubobject<UArrowComponent>("EndArrow");
+
 	TriggerVolume = CreateDefaultSubobject<UBoxComponent>("TriggerVolume");
-	TriggerVolume->SetupAttachment(DefaultScene);
+	// 시작 위치에 위치할 StartArrowComponent를 ArrowComponent에 붙입니다.
+	TriggerVolume->SetupAttachment(StartArrowComponent);
 }
 
 // Called when the game starts or when spawned
@@ -28,7 +33,8 @@ void AMRTile::BeginPlay()
 	
 	TriggerVolume->OnComponentBeginOverlap.AddDynamic(this, &AMRTile::OnOverlapBegin);
 
-	// 생성 시 오브젝트에서 해야 할 효과들을 추후 여기서 지정합니다.
+	// 생성 시 오브젝트에서 해야 할 효과들이 있다면(Cpp 로직이 정말로 필요하다면) 추후 여기서 지정합니다.
+	// 왠만해서는 오브젝트 레벨(머테리얼)에서 지정해주세요.
 }
 
 void AMRTile::OnOverlapBegin(class UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -40,10 +46,16 @@ void AMRTile::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
+	// 에디터가 변경될 경우 다음 함수들을 실행해서 생성한 오브젝트들을 관리합니다.
 	GenerateComponentsFromInfo(ObstacleArray, SpawnedObstacleArray, TEXT("Obstacle"));
 	GenerateComponentsFromInfo(PropArray, SpawnedPropArray, TEXT("Prop"));
 }
 
+/*
+* 기즈모를 통해 변경한 트랜스폼은 OnConstruction이 호출될 때 사라집니다.
+* 이 CallInEditor 리플렉션 프로퍼티로 선언한 함수로 버튼을 에디터에 노출시켜,
+* 기즈모를 통해 변경한 값을 쉽게 디자이너가 적용할 수 있도록 만듭니다.
+*/
 void AMRTile::UpdateObstaclesFromComponents()
 {
 	// Spawned 배열과 데이터 배열의 개수가 같은지 확인 (안전장치)
@@ -65,6 +77,11 @@ void AMRTile::UpdateObstaclesFromComponents()
 	UE_LOG(LogTemp, Log, TEXT("Obstacle Array data has been updated from components."));
 }
 
+/*
+* 기즈모를 통해 변경한 트랜스폼은 OnConstruction이 호출될 때 사라집니다.
+* 이 CallInEditor 리플렉션 프로퍼티로 선언한 함수로 버튼을 에디터에 노출시켜,
+* 기즈모를 통해 변경한 값을 쉽게 디자이너가 적용할 수 있도록 만듭니다.
+*/ 
 void AMRTile::UpdatePropsFromComponents()
 {
 	if (SpawnedPropArray.Num() != PropArray.Num())
@@ -84,21 +101,28 @@ void AMRTile::UpdatePropsFromComponents()
 
 void AMRTile::GenerateComponentsFromInfo(const TArray<FMRObjectAnchorInfo>& ObjectInfoArray, TArray<TObjectPtr<UStaticMeshComponent>>& SpawnedObjectArray, const FString& NamePrefix)
 {
-	// 기존에 생성된 컴포넌트들 파괴
-	for (TObjectPtr<UStaticMeshComponent> Comp : SpawnedObjectArray)
-	{
-		if (IsValid(Comp))
-		{
-			Comp->DestroyComponent();
-		}
-	}
-	SpawnedObjectArray.Empty();
+	const int32 DataNum = ObjectInfoArray.Num();
+	const int32 ComponentNum = SpawnedObjectArray.Num();
 
-	for (int32 i = 0; i < ObjectInfoArray.Num(); ++i)
+
+	// 요소가 삭제되었을 경우. 어떤 요소가 삭제된 지 모름, 컴포넌트를 전부 파괴한 후 재생성.
+	// 요소가 추가되었을 직후. 요소가 추가되어 비어있는 상태, 어느 부분에 삽입된지 알 수 없다.
+	// 추후의 동기화 로직의 간편화를 위해 컴포넌트를 전부 파괴하고 재생성.
+	if (DataNum != ComponentNum)
 	{
-		const FMRObjectAnchorInfo& ObjectInfo = ObjectInfoArray[i];
-		if (IsValid(ObjectInfo.StaticMesh))
+		// 기존에 생성된 컴포넌트들 파괴
+		for (TObjectPtr<UStaticMeshComponent> Comp : SpawnedObjectArray)
 		{
+			if (IsValid(Comp))
+			{
+				Comp->DestroyComponent();
+			}
+		}
+		SpawnedObjectArray.Empty();
+
+		for (int32 i = 0; i < ObjectInfoArray.Num(); ++i)
+		{
+			const FMRObjectAnchorInfo& ObjectInfo = ObjectInfoArray[i];
 			// 1. 컴포넌트 생성 (고유한 이름 보장을 위해 MakeUniqueObjectName 사용을 권장)
 			const FName CompName = MakeUniqueObjectName(this, UStaticMeshComponent::StaticClass(), *FString::Printf(TEXT("SpawnedMesh_%s_%d"), *NamePrefix, i));
 			TObjectPtr<UStaticMeshComponent> NewMeshComp = NewObject<UStaticMeshComponent>(this, CompName);
@@ -115,13 +139,39 @@ void AMRTile::GenerateComponentsFromInfo(const TArray<FMRObjectAnchorInfo>& Obje
 				NewMeshComp->SetupAttachment(GetRootComponent());
 
 				// 5. 컴포넌트 속성 설정
-				NewMeshComp->SetRelativeTransform(ObjectInfo.ObjectTransform);
-				NewMeshComp->SetStaticMesh(ObjectInfo.StaticMesh);
+				// (추가) DataNum > ComponentNum일때는 빈 컴포넌트를 생성합니다.
+				if (IsValid(ObjectInfo.StaticMesh))
+				{
+					NewMeshComp->SetRelativeTransform(ObjectInfo.ObjectTransform);
+					NewMeshComp->SetStaticMesh(ObjectInfo.StaticMesh);
+				}
 
 				// 6. 컴포넌트 최종 등록 및 활성화 (가장 중요)
 				NewMeshComp->RegisterComponent();
 
 				SpawnedObjectArray.Add(NewMeshComp);
+			}
+		}
+	}
+	// 두 개의 배열 숫자가 같을 경우입니다. 삭제 및 생성을 하지 않아 OnConstruction 함수를 최적화합니다.
+	else
+	{
+		for (int i = 0; i < DataNum; ++i)
+		{
+			const FMRObjectAnchorInfo& Info = ObjectInfoArray[i];
+			UStaticMeshComponent* Comp = SpawnedObjectArray[i];
+
+			if (IsValid(Comp))
+			{
+				// 데이터와 다른 경우에만 속성을 설정하여 불필요한 연산을 줄일 수도 있다.
+				if (Comp->GetStaticMesh() != Info.StaticMesh)
+				{
+					Comp->SetStaticMesh(Info.StaticMesh);
+				}
+				if (Comp->GetRelativeTransform().Equals(Info.ObjectTransform) == false)
+				{
+					Comp->SetRelativeTransform(Info.ObjectTransform);
+				}
 			}
 		}
 	}

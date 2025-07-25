@@ -76,10 +76,16 @@ private:
 	UPROPERTY(EditAnywhere, Category = "MRTile")
 	TArray<FMRObjectAnchorInfo> PropArray;
 
+	UPROPERTY(EditAnywhere, Category = "MRTile")
+	UArrowComponent* StartArrowComponent;
+
+	UPROPERTY(EditAnywhere, Category = "MRTile")
+	UArrowComponent* EndArrowComponent;
+
 	UPROPERTY()
 	class USceneComponent* DefaultScene;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "MRTile")
 	class UBoxComponent* TriggerVolume;
 
 	UPROPERTY()
