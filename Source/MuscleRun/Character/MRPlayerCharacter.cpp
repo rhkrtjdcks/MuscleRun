@@ -9,6 +9,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
+#include "Component/MRHealthComponent.h"
 
 // Sets default values
 AMRPlayerCharacter::AMRPlayerCharacter()
@@ -22,6 +23,8 @@ AMRPlayerCharacter::AMRPlayerCharacter()
 	SkeletonMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("PlayerMesh"));
 	SkeletonMesh->SetupAttachment(RootComponent);
 
+	HealthComp = CreateDefaultSubobject<UMRHealthComponent>(TEXT("HealthComp"));
+
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
 	SpringArm->bUsePawnControlRotation = true;
@@ -34,9 +37,9 @@ AMRPlayerCharacter::AMRPlayerCharacter()
 	// GetCharacterMovement()->bUseControllerDesiredRotation = true; // 이 옵션은 bOrientRotationToMovement와 함께 사용하지 않는 것이 일반적입니다.
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f);
-	GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	GetCharacterMovement()->MaxWalkSpeed = 600.0f;
 
-	GetCharacterMovement()->JumpZVelocity = 700.f;
+	GetCharacterMovement()->JumpZVelocity = 700.0f;
 	GetCharacterMovement()->AirControl = 0.5f;
 	GetCharacterMovement()->GravityScale = 2.0f;
 }
@@ -111,6 +114,7 @@ void AMRPlayerCharacter::OnInputJump(const FInputActionValue& Value)
 void AMRPlayerCharacter::GetDamaged(float DamageAmount)
 {
 	// Implement damage logic here
+	HealthComp->GetDamage(DamageAmount);
 }
 
 void AMRPlayerCharacter::ItemActivated()

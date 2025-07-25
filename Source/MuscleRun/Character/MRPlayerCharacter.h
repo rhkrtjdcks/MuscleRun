@@ -50,6 +50,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Player")
 	class UInputAction* IA_MTJump;
 
+	UPROPERTY(VisibleAnywhere, Category = "Player")
+	class UMRHealthComponent* HealthComp;
+
 private:
 	void OnInputMove(const FInputActionValue& Value);
 	void OnInputJump(const FInputActionValue& Value);
