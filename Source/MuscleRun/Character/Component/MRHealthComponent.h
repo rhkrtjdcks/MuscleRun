@@ -33,11 +33,6 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	UPROPERTY(EditDefaultsOnly, Category = "Health") //최대 체력 값 블루 프린트에서 읽기만 가능하고 수정은 에디터에서 가능
-	float MaxHealth = 100.0f;
-
-	UPROPERTY(VisibleAnywhere) // 현재 체력 값 /어디서든 볼 수 있지만 직접 수정은 안됨
-	float CurrentHealth;
 
 public:	
 	// Called every frame
@@ -46,6 +41,7 @@ public:
 public:
 	// 체력조작
 	void GetDamage(float Amount); // 주로 Character에게서 호출되는 체력이 감소되는 함수입니다.
+
 	void Heal(float Amount); // 체력을 회복하는 함수입니다.
 
 	/*
@@ -58,8 +54,9 @@ public:
 	FOnHealthBecomeToZero OnHealthBecomeToZero;
 
 private:
-	// 체력입니다.
-	float Health;
+	UPROPERTY(EditDefaultsOnly, Category = "Health", meta = (AllowPrivateAccess = "true")) //최대 체력 값 블루 프린트에서 읽기만 가능하고 수정은 에디터에서 가능
+		float MaxHealth = 100.0f;
 
-
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true")) // 현재 체력 값 /어디서든 볼 수 있지만 직접 수정은 안됨
+		float CurrentHealth = -1.0f;
 };
