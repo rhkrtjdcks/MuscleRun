@@ -3,11 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Interface/MRPlayable.h"
 #include "GameFramework/Character.h"
+#include "InputActionValue.h"
 #include "MRPlayerCharacter.generated.h"
 
 UCLASS()
-class MUSCLERUN_API AMRPlayerCharacter : public ACharacter
+class MUSCLERUN_API AMRPlayerCharacter : public ACharacter, public IMRPlayable
 {
 	GENERATED_BODY()
 
@@ -27,12 +29,32 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
-	UPROPERTY(VisibleAnywhere, Category = "BoxComp")
+	UPROPERTY(VisibleAnywhere, Category = "Player")
 	class UBoxComponent* TriggerVolume;
 
-	UPROPERTY(EditAnywhere, Category = "SkeleMeshComp")
+	UPROPERTY(EditAnywhere, Category = "Player")
 	class USkeletalMeshComponent* SkeletonMesh;
 
-	UPROPERTY(EditAnywhere, Category = "SpringcComp")
+	UPROPERTY(EditAnywhere, Category = "Player")
 	class USpringArmComponent* SpringArm;
+
+	UPROPERTY(EditAnywhere, Category ="Player")
+	class UCameraComponent* Camera;
+
+	UPROPERTY(EditAnywhere, Category = "Player")
+	class UInputMappingContext* IMC_MRPlayerInput;
+
+	UPROPERTY(EditAnywhere, Category = "Player")
+	class UInputAction* IA_MRMove;
+
+	UPROPERTY(EditAnywhere, Category = "Player")
+	class UInputAction* IA_MTJump;
+
+private:
+	void OnInputMove(const FInputActionValue& Value);
+	void OnInputJump(const FInputActionValue& Value);
+
+	void GetDamaged(float DamageAmount) override;
+
+	void ItemActivated() override;
 };
