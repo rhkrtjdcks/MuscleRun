@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/TriggerVolume.h"
-#include "StreamTriggerVolume.generated.h"
+#include "GameFramework/Actor.h"
+#include "TileManager.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class MUSCLERUN_API AStreamTriggerVolume : public ATriggerVolume
+class MUSCLERUN_API ATileManager : public AActor
 {
 	GENERATED_BODY()
 	

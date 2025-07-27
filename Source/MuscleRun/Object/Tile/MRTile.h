@@ -1,113 +1,143 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// -----------------------------------------------------------------------------
+// AMRTile.h - 최종 수정본
+// -----------------------------------------------------------------------------
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "MRTile.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTileManagerActionStarted, AActor*, ThisActor);
-
-/*
-* 타일에 오브젝트를 배치할 정보를 가진 구조체입니다.
-* 이 정보를 바탕으로 컴포넌트를 만들고 디자이너가 배치하도록 합니다.
-*/
+/**
+ * @brief 장애물 스폰 정보를 담는 구조체입니다.
+ * 런타임에 실제 액터를 스폰하기 위한 정보와 에디터에서 미리보기를 위한 메시 정보를 가집니다.
+ */
 USTRUCT(BlueprintType)
-struct FMRObjectAnchorInfo
+struct FMRObstacleSpawnInfo
 {
 	GENERATED_BODY()
 
-	// (추가) 완전한 동기화를 위한 추가적인 프로퍼티입니다.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Tile")
+	UPROPERTY(VisibleAnywhere, Category = "Tile")
 	FGuid ObjectID;
 
+	// 런타임에 스폰할 실제 장애물 액터 클래스 (예: BP_SpikeObstacle)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
+	TSubclassOf<AActor> ActorClassToSpawn;
+
+	// 에디터에서만 보일 미리보기용 스태틱 메시
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
+	TObjectPtr<class UStaticMesh> PreviewMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
+	FTransform ObjectTransform;
+
+	FMRObstacleSpawnInfo()
+	{
+		ObjectID = FGuid::NewGuid();
+		ActorClassToSpawn = nullptr;
+		PreviewMesh = nullptr;
+		ObjectTransform = FTransform::Identity;
+	}
+};
+
+/**
+ * @brief 장식용 소품(Prop) 배치 정보를 담는 구조체입니다.
+ * 게임플레이 로직 없이 외형만 담당하는 스태틱 메시 컴포넌트를 생성하는 데 사용됩니다.
+ */
+USTRUCT(BlueprintType)
+struct FMRPropInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, Category = "Tile")
+	FGuid ObjectID;
+
+	// 타일에 직접 배치될 스태틱 메시
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
 	TObjectPtr<class UStaticMesh> StaticMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
 	FTransform ObjectTransform;
 
-	FMRObjectAnchorInfo(){
+	FMRPropInfo()
+	{
 		ObjectID = FGuid::NewGuid();
 		StaticMesh = nullptr;
 		ObjectTransform = FTransform::Identity;
 	}
 };
 
+/**
+ * @class AMRTile
+ * @brief 무한 러너 게임의 기본 타일 액터입니다.
+ * 에디터에서는 장애물과 소품의 배치를 시각적으로 지원하고,
+ * 런타임에서는 ATileManager에게 장애물 스폰 정보를 제공하는 역할을 합니다.
+ */
 UCLASS()
 class MUSCLERUN_API AMRTile : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	AMRTile();
 
+	/**
+	 * @brief ATileManager가 이 타일 위에 스폰해야 할 장애물 정보를 가져갑니다.
+	 * @return 장애물 스폰 정보 배열의 상수 참조
+	 */
+	const TArray<FMRObstacleSpawnInfo>& GetObstacleSpawnData() const { return ObstacleArray; }
+
+	/**
+	 * @brief 다음 타일이 생성될 위치의 Transform을 반환합니다.
+	 * @return EndArrowComponent의 월드 트랜스폼
+	 */
+	FTransform GetEndArrowTransform() const;
+
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-public:
-	// 에디터 노출을 시키지 않습니다.
-	FOnTileManagerActionStarted OnTileGeneratedOvelaped;
-
-public:
-	UFUNCTION()
-	FORCEINLINE FTransform GetTileTransform() const;
-
-	UFUNCTION()
-	FORCEINLINE void SetTileTransform(const FTransform& NewTransform);
-
-protected:
-	UFUNCTION()
-	void OnOverlapBegin(class UPrimitiveComponent* OverlappedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-    UFUNCTION(CallInEditor, Category = "MRTile")
-    void SaveGizmoChangeForObstacle();
-
-    UFUNCTION(CallInEditor, Category = "MRTile")
-    void SaveGizmoChangeForProp();
-
 private:
-	UPROPERTY(VisibleAnywhere, Category = "MRTile")
-	class UStaticMeshComponent* MeshComp;
+	// 에디터에서 기즈모로 변경한 장애물 위치를 데이터에 저장하는 버튼 함수
+	UFUNCTION(CallInEditor, Category = "MRTile|Actions")
+	void SaveGizmoChangeForObstacle();
 
-	UPROPERTY(EditAnywhere, Category = "MRTile")
-	TArray<FMRObjectAnchorInfo> ObstacleArray;
+	// 에디터에서 기즈모로 변경한 소품 위치를 데이터에 저장하는 버튼 함수
+	UFUNCTION(CallInEditor, Category = "MRTile|Actions")
+	void SaveGizmoChangeForProp();
 
-	UPROPERTY(EditAnywhere, Category = "MRTile")
-	TArray<FMRObjectAnchorInfo> PropArray;
+	// 타일의 기본 메시 컴포넌트
+	UPROPERTY(VisibleAnywhere, Category = "MRTile|Components")
+	TObjectPtr<class UStaticMeshComponent> MeshComp;
 
-	UPROPERTY(EditAnywhere, Category = "MRTile")
-	class UArrowComponent* StartArrowComponent;
 
-	UPROPERTY(EditAnywhere, Category = "MRTile")
-	class UArrowComponent* EndArrowComponent;
+	// 타일의 시작점을 나타내는 Arrow 컴포넌트
+	UPROPERTY(VisibleAnywhere, Category = "MRTile|Components")
+	TObjectPtr<class UArrowComponent> StartArrowComponent;
 
+	// 타일의 끝점(다음 타일의 시작점)을 나타내는 Arrow 컴포넌트
+	UPROPERTY(VisibleAnywhere, Category = "MRTile|Components")
+	TObjectPtr<class UArrowComponent> EndArrowComponent;
+
+	// 에디터에서 장애물 미리보기를 위해 사용하는 컴포넌트 맵
 	UPROPERTY()
-	class USceneComponent* DefaultScene;
-
-	UPROPERTY(VisibleAnywhere, Category = "MRTile")
-	class UBoxComponent* TriggerVolume;
-
-	UPROPERTY(VisibleAnywhere, Category = "MRTile")
 	TMap<FGuid, TObjectPtr<UStaticMeshComponent>> IDToComponentObstacleMap;
-
-	UPROPERTY(VisibleAnywhere, Category = "MRTile")
+	
+	// 타일에 직접 붙는 장식용 소품 컴포넌트 맵
+	UPROPERTY()
 	TMap<FGuid, TObjectPtr<UStaticMeshComponent>> IDToComponentPropMap;
+	
+	// ObstacleArray의 데이터를 기반으로 에디터에서 미리보기 컴포넌트를 업데이트합니다.
+	void UpdateObstaclePreviews();
+	
+	// PropArray의 데이터를 기반으로 타일에 붙는 실제 장식 컴포넌트를 업데이트합니다.
+	void UpdatePropComponents();
 
-	// UPROPERTY()
-	// TArray<TObjectPtr<UStaticMeshComponent>> SpawnedObstacleArray;
+protected:
+	// 장애물 스폰 정보 배열. 런타임에 실제 액터로 스폰됩니다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MRTile|Spawn Data", meta = (TitleProperty = "ActorClassToSpawn"))
+	TArray<FMRObstacleSpawnInfo> ObstacleArray;
 
-	// UPROPERTY()
-	// TArray<TObjectPtr<UStaticMeshComponent>> SpawnedPropArray;
-
-
-
-
-private:
-	void UpdateComponentsFromInfo(const TArray<FMRObjectAnchorInfo>& ObjectArray, TMap<FGuid, TObjectPtr<UStaticMeshComponent>>& IDToComponentMap, const FString& NamePrefix);
-
+	// 장식용 소품 정보 배열. 스태틱 메시 컴포넌트로 타일에 직접 붙습니다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MRTile|Spawn Data", meta = (TitleProperty = "StaticMesh"))
+	TArray<FMRPropInfo> PropArray;
 };

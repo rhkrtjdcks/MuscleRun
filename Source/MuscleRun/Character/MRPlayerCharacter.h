@@ -3,13 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Interface/MRPlayable.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "MRPlayerCharacter.generated.h"
 
 UCLASS()
-class MUSCLERUN_API AMRPlayerCharacter : public ACharacter, public IMRPlayable
+class MUSCLERUN_API AMRPlayerCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -57,7 +56,7 @@ private:
 	void OnInputMove(const FInputActionValue& Value);
 	void OnInputJump(const FInputActionValue& Value);
 
-	void GetDamaged(float DamageAmount) override;
+	void GetDamaged(float DamageAmount);
 
-	void ItemActivated() override;
+	void ItemActivated();
 };
