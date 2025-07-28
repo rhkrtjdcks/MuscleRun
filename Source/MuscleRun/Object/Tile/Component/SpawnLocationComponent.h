@@ -17,7 +17,7 @@ public:
 
 	// 런타임에 ATileManager가 스폰할 실제 액터 클래스
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SpawnPoint")
-	TSubclassOf<AActor> ActorClassToSpawn;
+	TObjectPtr<class UDA_SpawnableObjects> ActorGroupToSpawn;
 	
 	// 에디터에서 디자이너가 직접 지정할 미리보기용 메시
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SpawnPoint|Editor")
