@@ -1,8 +1,11 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "MRObstacleConcrete.h"
-#include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "GameFramework/ProjectileMovementComponent.h"
+#include "GameFramework/Character.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/DamageType.h"
 
 AMRObstacleConcrete::AMRObstacleConcrete()
 {
@@ -15,16 +18,11 @@ AMRObstacleConcrete::AMRObstacleConcrete()
 	ProjectileMovementComponent->bShouldBounce = true;
 	ProjectileMovementComponent->Bounciness = 1.0f;
 	ProjectileMovementComponent->ProjectileGravityScale = 0.f;
-
-	// ✨ 1. 자동 회전 기능을 비활성화합니다.
 	ProjectileMovementComponent->bRotationFollowsVelocity = false;
 
-	// 부모 클래스에서 데미지 값을 설정할 수 있습니다.
-	Damage = 25.0f;
-
-	// ✨ 2. OnHit 함수를 사용하기 위해 아래 두 줄을 추가합니다.
+	// ✨ OnHit 이벤트가 플레이어와 정상적으로 발생하도록 콜리전 설정을 수정합니다.
+	MeshComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Block);
 	MeshComponent->SetNotifyRigidBodyCollision(true);
-	MeshComponent->OnComponentHit.AddDynamic(this, &AMRObstacleConcrete::OnHit);
 }
 
 void AMRObstacleConcrete::BeginPlay()
@@ -32,6 +30,9 @@ void AMRObstacleConcrete::BeginPlay()
 	Super::BeginPlay();
 	StartLocation = GetActorLocation();
 	ProjectileMovementComponent->Velocity = FVector(1.0f, 0.0f, 0.0f) * ProjectileMovementComponent->InitialSpeed;
+
+	// ✨ OnHit 함수를 이벤트에 연결합니다.
+	MeshComponent->OnComponentHit.AddDynamic(this, &AMRObstacleConcrete::OnHit);
 }
 
 void AMRObstacleConcrete::Tick(float DeltaTime)
@@ -40,18 +41,42 @@ void AMRObstacleConcrete::Tick(float DeltaTime)
 
 	// 거리 기반의 방향 전환 로직
 	const float DistanceMoved = FVector::Dist(StartLocation, GetActorLocation());
-	if (DistanceMoved > MoveDistance)
+	if (MoveDistance > 0.f && DistanceMoved > MoveDistance)
 	{
 		ProjectileMovementComponent->Velocity *= -1;
 		StartLocation = GetActorLocation();
 	}
 }
 
+// AMRObstacleConcrete.cpp
+
 void AMRObstacleConcrete::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	// 벽에 부딪혔을 때 시작 위치를 리셋하는 로직
-	if (OtherActor && (OtherActor != this))
+	if (!OtherActor || OtherActor == this)
 	{
+		return;
+	}
+
+	// 부딪힌 대상이 플레이어 캐릭터인지 확인
+	ACharacter* PlayerCharacter = Cast<ACharacter>(OtherActor);
+	if (PlayerCharacter)
+	{
+		// 1. 데미지 적용
+		UGameplayStatics::ApplyDamage(PlayerCharacter, Damage, UGameplayStatics::GetPlayerController(this, 0), this, UDamageType::StaticClass());
+
+		// ✨ 2. 넉백 방향을 충돌 지점의 법선 벡터(ImpactNormal)로 계산합니다.
+		FVector KnockbackDirection = -Hit.ImpactNormal; //  -넣어서 자석처럼 빨려들어가는 느낌제거
+		KnockbackDirection.Z = 0.5f; // 살짝 위로 튕겨내도록 Z값 추가
+		KnockbackDirection.Normalize();
+
+		// 3. 플레이어에게 넉백을 적용합니다.
+		PlayerCharacter->LaunchCharacter(KnockbackDirection * KnockbackStrength, true, true);
+
+		// 장애물 자신의 이동 로직은 건드리지 않습니다.
+	}
+	else
+	{
+		// 대상이 플레이어가 아닐 경우 (예: 벽)
 		StartLocation = GetActorLocation();
 	}
 }
