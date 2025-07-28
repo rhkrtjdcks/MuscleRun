@@ -7,6 +7,7 @@
 #include "Character/MRPlayerCharacter.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SceneComponent.h"
 
 
 
@@ -16,17 +17,19 @@ AMRObsrtuctBase::AMRObsrtuctBase()
 	// 컴포넌트를 생성하고 루트 컴포넌트에 붙입니다.
     //MeshComponent = CreateDefaultSubobject<UMeshComponent>("MeshComp");
     // ...
-     // 이 클래스 자체는 틱을 사용하지 않으므로 꺼두는 것이 효율적입니다.
+    // 이 클래스 자체는 틱을 사용하지 않으므로 꺼두는 것이 효율적입니다.
     PrimaryActorTick.bCanEverTick = false;
 
-    // 1. 충돌을 감지할 박스(TriggerVolume)를 생성하고 액터의 루트(중심)로 설정합니다.
+    // ✨ 2. 비어있는 SceneComponent를 생성하여 액터의 루트(기준점)로 설정합니다.
+    USceneComponent* SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+    RootComponent = SceneRoot;
+
+    // ✨ 3. 충돌을 감지할 박스(TriggerVolume)를 생성하고 새로운 루트(SceneRoot)에 붙입니다.
     TriggerVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerVolume"));
     TriggerVolume->SetupAttachment(RootComponent);
 
-    // 2. 외형을 보여줄 메시(MeshComponent)를 생성합니다.
+    // ✨ 4. 외형을 보여줄 메시(MeshComponent)를 생성하고 역시 새로운 루트(SceneRoot)에 붙입니다.
     MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
-
-    // 3. 메시를 루트(TriggerVolume)에 붙여서 함께 움직이도록 합니다.
     MeshComponent->SetupAttachment(RootComponent);
 }
 
