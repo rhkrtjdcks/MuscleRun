@@ -1,187 +1,198 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
+// -----------------------------------------------------------------------------
+// AMRTile.cpp - ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+// -----------------------------------------------------------------------------
 #include "Object/Tile/MRTile.h"
-#include "Components/BoxComponent.h"
 #include "Components/ArrowComponent.h"
-#include "GameFramework/Actor.h"
+#include "Components/StaticMeshComponent.h"
 
-// Sets default values
 AMRTile::AMRTile()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
+	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneComponent"));
 
-	DefaultScene = CreateDefaultSubobject<USceneComponent>("DefaultSceneComponent");
-	SetRootComponent(DefaultScene);
+	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComp_TileEntire"));
+	MeshComp->SetupAttachment(RootComponent);
 
-	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>("MeshComp_TileEntire");
-	MeshComp->SetupAttachment(DefaultScene);
+	StartArrowComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("StartArrow"));
+	StartArrowComponent->SetupAttachment(RootComponent);
 
-	StartArrowComponent = CreateDefaultSubobject<UArrowComponent>("StartArrow");
-	EndArrowComponent = CreateDefaultSubobject<UArrowComponent>("EndArrow");
-
-	TriggerVolume = CreateDefaultSubobject<UBoxComponent>("TriggerVolume");
-	// ½ÃÀÛ À§Ä¡¿¡ À§Ä¡ÇÒ StartArrowComponent¸¦ ArrowComponent¿¡ ºÙÀÔ´Ï´Ù.
-	TriggerVolume->SetupAttachment(StartArrowComponent);
+	EndArrowComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("EndArrow"));
+	EndArrowComponent->SetupAttachment(RootComponent);
 }
 
-// Called when the game starts or when spawned
 void AMRTile::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	TriggerVolume->OnComponentBeginOverlap.AddDynamic(this, &AMRTile::OnOverlapBegin);
 
-	// »ý¼º ½Ã ¿ÀºêÁ§Æ®¿¡¼­ ÇØ¾ß ÇÒ È¿°úµéÀÌ ÀÖ´Ù¸é(Cpp ·ÎÁ÷ÀÌ Á¤¸»·Î ÇÊ¿äÇÏ´Ù¸é) ÃßÈÄ ¿©±â¼­ ÁöÁ¤ÇÕ´Ï´Ù.
-	// ¿Ø¸¸ÇØ¼­´Â ¿ÀºêÁ§Æ® ·¹º§(¸ÓÅ×¸®¾ó)¿¡¼­ ÁöÁ¤ÇØÁÖ¼¼¿ä.
-}
-
-void AMRTile::OnOverlapBegin(class UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	OnTileGeneratedOvelaped.Broadcast(this);
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ÛµÇ¸ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì´ï¿½ ï¿½ï¿½Ö¹ï¿½ 'ï¿½Ì¸ï¿½ï¿½ï¿½ï¿½ï¿½' ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ã·ï¿½ï¿½Ì¿ï¿½ ï¿½ï¿½Ö¹ï¿½ ï¿½ï¿½ï¿½Í´ï¿½ ATileManagerï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì±ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ô´Ï´ï¿½.
+	// Prop ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ì¹Ç·ï¿½ ï¿½×´ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.
+	for (auto& Pair : IDToComponentObstacleMap)
+	{
+		if (Pair.Value)
+		{
+			Pair.Value->SetVisibility(false);
+			Pair.Value->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
 }
 
 void AMRTile::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	// ¿¡µðÅÍ°¡ º¯°æµÉ °æ¿ì ´ÙÀ½ ÇÔ¼öµéÀ» ½ÇÇàÇØ¼­ »ý¼ºÇÑ ¿ÀºêÁ§Æ®µéÀ» °ü¸®ÇÕ´Ï´Ù.
-	GenerateComponentsFromInfo(ObstacleArray, SpawnedObstacleArray, TEXT("Obstacle"));
-	GenerateComponentsFromInfo(PropArray, SpawnedPropArray, TEXT("Prop"));
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½Ó¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½ï¿½ï¿½ Ç¥ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½Õ´Ï´ï¿½.
+	UpdateObstaclePreviews();
+	UpdatePropComponents();
 }
 
-/*
-* ±âÁî¸ð¸¦ ÅëÇØ º¯°æÇÑ Æ®·£½ºÆûÀº OnConstructionÀÌ È£ÃâµÉ ¶§ »ç¶óÁý´Ï´Ù.
-* ÀÌ CallInEditor ¸®ÇÃ·º¼Ç ÇÁ·ÎÆÛÆ¼·Î ¼±¾ðÇÑ ÇÔ¼ö·Î ¹öÆ°À» ¿¡µðÅÍ¿¡ ³ëÃâ½ÃÄÑ,
-* ±âÁî¸ð¸¦ ÅëÇØ º¯°æÇÑ °ªÀ» ½±°Ô µðÀÚÀÌ³Ê°¡ Àû¿ëÇÒ ¼ö ÀÖµµ·Ï ¸¸µì´Ï´Ù.
-*/
-void AMRTile::UpdateObstaclesFromComponents()
+void AMRTile::SaveGizmoChangeForObstacle()
 {
-	// Spawned ¹è¿­°ú µ¥ÀÌÅÍ ¹è¿­ÀÇ °³¼ö°¡ °°ÀºÁö È®ÀÎ (¾ÈÀüÀåÄ¡)
-	if (SpawnedObstacleArray.Num() != ObstacleArray.Num())
+	for (const auto& Pair : IDToComponentObstacleMap)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Obstacle component count and data count do not match. Re-run OnConstruction."));
-		return;
-	}
+		if (!IsValid(Pair.Value)) continue;
 
-	for (int32 i = 0; i < SpawnedObstacleArray.Num(); ++i)
-	{
-		if (IsValid(SpawnedObstacleArray[i]))
+		for (FMRObstacleSpawnInfo& Info : ObstacleArray)
 		{
-			// ÄÄÆ÷³ÍÆ®ÀÇ ÇöÀç Æ®·£½ºÆûÀ» °¡Á®¿Í µ¥ÀÌÅÍ ¹è¿­¿¡ ÀúÀåÇÕ´Ï´Ù.
-			ObstacleArray[i].ObjectTransform = SpawnedObstacleArray[i]->GetRelativeTransform();
-		}
-	}
-
-	UE_LOG(LogTemp, Log, TEXT("Obstacle Array data has been updated from components."));
-}
-
-/*
-* ±âÁî¸ð¸¦ ÅëÇØ º¯°æÇÑ Æ®·£½ºÆûÀº OnConstructionÀÌ È£ÃâµÉ ¶§ »ç¶óÁý´Ï´Ù.
-* ÀÌ CallInEditor ¸®ÇÃ·º¼Ç ÇÁ·ÎÆÛÆ¼·Î ¼±¾ðÇÑ ÇÔ¼ö·Î ¹öÆ°À» ¿¡µðÅÍ¿¡ ³ëÃâ½ÃÄÑ,
-* ±âÁî¸ð¸¦ ÅëÇØ º¯°æÇÑ °ªÀ» ½±°Ô µðÀÚÀÌ³Ê°¡ Àû¿ëÇÒ ¼ö ÀÖµµ·Ï ¸¸µì´Ï´Ù.
-*/ 
-void AMRTile::UpdatePropsFromComponents()
-{
-	if (SpawnedPropArray.Num() != PropArray.Num())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Prop component count and data count do not match. Re-run OnConstruction."));
-		return;
-	}
-	for (int32 i = 0; i < SpawnedPropArray.Num(); ++i)
-	{
-		if (IsValid(SpawnedPropArray[i]))
-		{
-			PropArray[i].ObjectTransform = SpawnedPropArray[i]->GetRelativeTransform();
-		}
-	}
-	UE_LOG(LogTemp, Log, TEXT("Obstacle Array data has been updated from components."));
-}
-
-void AMRTile::GenerateComponentsFromInfo(const TArray<FMRObjectAnchorInfo>& ObjectInfoArray, TArray<TObjectPtr<UStaticMeshComponent>>& SpawnedObjectArray, const FString& NamePrefix)
-{
-	const int32 DataNum = ObjectInfoArray.Num();
-	const int32 ComponentNum = SpawnedObjectArray.Num();
-
-
-	// ¿ä¼Ò°¡ »èÁ¦µÇ¾úÀ» °æ¿ì. ¾î¶² ¿ä¼Ò°¡ »èÁ¦µÈ Áö ¸ð¸§, ÄÄÆ÷³ÍÆ®¸¦ ÀüºÎ ÆÄ±«ÇÑ ÈÄ Àç»ý¼º.
-	// ¿ä¼Ò°¡ Ãß°¡µÇ¾úÀ» Á÷ÈÄ. ¿ä¼Ò°¡ Ãß°¡µÇ¾î ºñ¾îÀÖ´Â »óÅÂ, ¾î´À ºÎºÐ¿¡ »ðÀÔµÈÁö ¾Ë ¼ö ¾ø´Ù.
-	// ÃßÈÄÀÇ µ¿±âÈ­ ·ÎÁ÷ÀÇ °£ÆíÈ­¸¦ À§ÇØ ÄÄÆ÷³ÍÆ®¸¦ ÀüºÎ ÆÄ±«ÇÏ°í Àç»ý¼º.
-	if (DataNum != ComponentNum)
-	{
-		// ±âÁ¸¿¡ »ý¼ºµÈ ÄÄÆ÷³ÍÆ®µé ÆÄ±«
-		for (TObjectPtr<UStaticMeshComponent> Comp : SpawnedObjectArray)
-		{
-			if (IsValid(Comp))
+			if (Info.ObjectID == Pair.Key)
 			{
-				Comp->DestroyComponent();
+				Info.ObjectTransform = Pair.Value->GetRelativeTransform();
+				break;
 			}
+		}
+	}
+	UE_LOG(LogTemp, Log, TEXT("Obstacle gizmo changes saved."));
+}
+
+void AMRTile::SaveGizmoChangeForProp()
+{
+	for (const auto& Pair : IDToComponentPropMap)
+	{
+		if (!IsValid(Pair.Value)) continue;
+
+		for (FMRPropInfo& Info : PropArray)
+		{
+			if (Info.ObjectID == Pair.Key)
+			{
+				Info.ObjectTransform = Pair.Value->GetRelativeTransform();
+				break;
+			}
+		}
+	}
+	UE_LOG(LogTemp, Log, TEXT("Prop gizmo changes saved."));
+}
+
+void AMRTile::UpdateObstaclePreviews()
+{
+	TSet<FGuid> CurrentDataIDs;
+	for (const auto& Info : ObstacleArray)
+	{
+		CurrentDataIDs.Add(Info.ObjectID);
+	}
+
+	TArray<FGuid> ObsoleteIDs;
+	for (const auto& Pair : IDToComponentObstacleMap)
+	{
+		if (!CurrentDataIDs.Contains(Pair.Key))
+		{
+			if (IsValid(Pair.Value))
+			{
+				Pair.Value->DestroyComponent();
+			}
+			ObsoleteIDs.Add(Pair.Key);
+		}
+	}
+	for (const FGuid& ID : ObsoleteIDs)
+	{
+		IDToComponentObstacleMap.Remove(ID);
+	}
+
+	for (const auto& Info : ObstacleArray)
+	{
+		TObjectPtr<UStaticMeshComponent> ComponentToUpdate = nullptr;
+		if (TObjectPtr<UStaticMeshComponent>* ExistingCompPtr = IDToComponentObstacleMap.Find(Info.ObjectID))
+		{
+			ComponentToUpdate = *ExistingCompPtr;
 		}
 		SpawnedObjectArray.Empty();
 
 		for (int32 i = 0; i < ObjectInfoArray.Num(); ++i)
 		{
-			const FMRObjectAnchorInfo& ObjectInfo = ObjectInfoArray[i];
-			// 1. ÄÄÆ÷³ÍÆ® »ý¼º (°íÀ¯ÇÑ ÀÌ¸§ º¸ÀåÀ» À§ÇØ MakeUniqueObjectName »ç¿ëÀ» ±ÇÀå)
-			const FName CompName = MakeUniqueObjectName(this, UStaticMeshComponent::StaticClass(), *FString::Printf(TEXT("SpawnedMesh_%s_%d"), *NamePrefix, i));
-			TObjectPtr<UStaticMeshComponent> NewMeshComp = NewObject<UStaticMeshComponent>(this, CompName);
+			const FName CompName = MakeUniqueObjectName(this, UStaticMeshComponent::StaticClass(), *FString::Printf(TEXT("ObstaclePreview_%s"), *Info.ObjectID.ToString()));
+			ComponentToUpdate = NewObject<UStaticMeshComponent>(this, CompName);
 
-			if (ensure(NewMeshComp))
-			{
-				// 2. ÄÄÆ÷³ÍÆ®°¡ Construction Script¿¡¼­ »ý¼ºµÇ¾úÀ½À» ¿¡µðÅÍ¿¡ ¾Ë¸²
-				NewMeshComp->CreationMethod = EComponentCreationMethod::UserConstructionScript;
+			ComponentToUpdate->CreationMethod = EComponentCreationMethod::UserConstructionScript;
+			ComponentToUpdate->bEditableWhenInherited = true;
 
-				// 3. ¾×ÅÍÀÇ ÀÎ½ºÅÏ½º ÄÄÆ÷³ÍÆ®·Î Ãß°¡
-				AddInstanceComponent(NewMeshComp);
-
-				// 4. ÄÄÆ÷³ÍÆ®¸¦ ¾À °èÃþ ±¸Á¶¿¡ ºÎÂø
-				NewMeshComp->SetupAttachment(GetRootComponent());
-
-				// 5. ÄÄÆ÷³ÍÆ® ¼Ó¼º ¼³Á¤
-				// (Ãß°¡) DataNum > ComponentNumÀÏ¶§´Â ºó ÄÄÆ÷³ÍÆ®¸¦ »ý¼ºÇÕ´Ï´Ù.
-				if (IsValid(ObjectInfo.StaticMesh))
-				{
-					NewMeshComp->SetRelativeTransform(ObjectInfo.ObjectTransform);
-					NewMeshComp->SetStaticMesh(ObjectInfo.StaticMesh);
-				}
-
-				// 6. ÄÄÆ÷³ÍÆ® ÃÖÁ¾ µî·Ï ¹× È°¼ºÈ­ (°¡Àå Áß¿ä)
-				NewMeshComp->RegisterComponent();
-
-				SpawnedObjectArray.Add(NewMeshComp);
-			}
+			AddInstanceComponent(ComponentToUpdate);
+			ComponentToUpdate->SetupAttachment(RootComponent);
+			ComponentToUpdate->RegisterComponent();
+			IDToComponentObstacleMap.Add(Info.ObjectID, ComponentToUpdate);
 		}
-	}
-	// µÎ °³ÀÇ ¹è¿­ ¼ýÀÚ°¡ °°À» °æ¿ìÀÔ´Ï´Ù. »èÁ¦ ¹× »ý¼ºÀ» ÇÏÁö ¾Ê¾Æ OnConstruction ÇÔ¼ö¸¦ ÃÖÀûÈ­ÇÕ´Ï´Ù.
-	else
-	{
-		for (int i = 0; i < DataNum; ++i)
+
+		if (ComponentToUpdate)
 		{
-			const FMRObjectAnchorInfo& Info = ObjectInfoArray[i];
-			UStaticMeshComponent* Comp = SpawnedObjectArray[i];
-
-			if (IsValid(Comp))
-			{
-				// µ¥ÀÌÅÍ¿Í ´Ù¸¥ °æ¿ì¿¡¸¸ ¼Ó¼ºÀ» ¼³Á¤ÇÏ¿© ºÒÇÊ¿äÇÑ ¿¬»êÀ» ÁÙÀÏ ¼öµµ ÀÖ´Ù.
-				if (Comp->GetStaticMesh() != Info.StaticMesh)
-				{
-					Comp->SetStaticMesh(Info.StaticMesh);
-				}
-				if (Comp->GetRelativeTransform().Equals(Info.ObjectTransform) == false)
-				{
-					Comp->SetRelativeTransform(Info.ObjectTransform);
-				}
-			}
+			ComponentToUpdate->SetStaticMesh(Info.PreviewMesh);
+			ComponentToUpdate->SetRelativeTransform(Info.ObjectTransform);
 		}
 	}
 }
-FORCEINLINE FTransform AMRTile::GetTileTransform() const
+
+void AMRTile::UpdatePropComponents()
 {
-	return GetActorTransform();
+	TSet<FGuid> CurrentDataIDs;
+	for (const auto& Info : PropArray)
+	{
+		CurrentDataIDs.Add(Info.ObjectID);
+	}
+
+	TArray<FGuid> ObsoleteIDs;
+	for (const auto& Pair : IDToComponentPropMap)
+	{
+		if (!CurrentDataIDs.Contains(Pair.Key))
+		{
+			if (IsValid(Pair.Value))
+			{
+				Pair.Value->DestroyComponent();
+			}
+			ObsoleteIDs.Add(Pair.Key);
+		}
+	}
+	for (const FGuid& ID : ObsoleteIDs)
+	{
+		IDToComponentPropMap.Remove(ID);
+	}
+
+	for (const auto& Info : PropArray)
+	{
+		TObjectPtr<UStaticMeshComponent> ComponentToUpdate = nullptr;
+		if (TObjectPtr<UStaticMeshComponent>* ExistingCompPtr = IDToComponentPropMap.Find(Info.ObjectID))
+		{
+			ComponentToUpdate = *ExistingCompPtr;
+		}
+		else
+		{
+			const FName CompName = MakeUniqueObjectName(this, UStaticMeshComponent::StaticClass(), *FString::Printf(TEXT("Prop_%s"), *Info.ObjectID.ToString()));
+			ComponentToUpdate = NewObject<UStaticMeshComponent>(this, CompName);
+
+			ComponentToUpdate->CreationMethod = EComponentCreationMethod::UserConstructionScript;
+			ComponentToUpdate->bEditableWhenInherited = true;
+
+			AddInstanceComponent(ComponentToUpdate);
+			ComponentToUpdate->SetupAttachment(RootComponent);
+			ComponentToUpdate->RegisterComponent();
+			IDToComponentPropMap.Add(Info.ObjectID, ComponentToUpdate);
+		}
+
+		if (ComponentToUpdate)
+		{
+			ComponentToUpdate->SetStaticMesh(Info.StaticMesh);
+			ComponentToUpdate->SetRelativeTransform(Info.ObjectTransform);
+		}
+	}
 }
 
-FORCEINLINE void AMRTile::SetTileTransform(const FTransform& NewTransform)
+FTransform AMRTile::GetEndArrowTransform() const
 {
-	SetActorTransform(NewTransform);
+	return EndArrowComponent->GetComponentTransform();
 }

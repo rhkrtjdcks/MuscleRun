@@ -3,18 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Character/Component/MRItemEffectManagerComponent.h"
 #include "GameFramework/Actor.h"
 #include "ItemBaseActor.generated.h"
 
 /*
 * 아이템의 기본 뼈대가 될 클래스입니다.
 * 아이템의 효과를 제외한 모든 기본 속성들을 전부 포함합니다.
-* 1. 메쉬 컴포넌트, 아이템 컴포넌트	
-* 2. 오버래핑 이벤트에 함수를 바인딩하는 기능 (Activate 함수를 통한 아이템 효과 사용)
-* 3-1. 오버래핑 이벤트 발생 시, UBaseEffectComponent를 외부에서 주입받아야 함.
-* 3-2. ActivateItem 함수, 그리고 캐릭터 클래스에 의해 호출받고, UBasEffectComponent* 의 이펙트 적용 함수를 사용함.
+* 구성을 간략화해서 다음과 같은 기능만을 포함합니다!
+* 1. 컴포넌트들
+* 2. 오버래핑 바인딩 함수.
 */
-UCLASS(Abstract)
+UCLASS()
 class MUSCLERUN_API AItemBaseActor : public AActor
 {
 	GENERATED_BODY()
@@ -27,7 +27,18 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+private:
+	UPROPERTY(VisibleAnywhere, Category = "Item")
+	class UBoxComponent* TriggerVolume;
+
+	UPROPERTY(EditAnywhere, Category = "Item")
+	class UStaticMeshComponent* MeshComp;
+
+	// 아이템 타입을 에디터에 넣어주세요.
+	UPROPERTY(EditAnywhere, Category = "Item")
+	EItemEffectTypes ItemType;
+
+protected:
+	UFUNCTION()
+	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 };

@@ -1,103 +1,143 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// -----------------------------------------------------------------------------
+// AMRTile.h - ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+// -----------------------------------------------------------------------------
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "MRTile.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTileManagerActionStarted, AActor*, ThisActor);
-
-/*
-* Å¸ÀÏ¿¡ ¿ÀºêÁ§Æ®¸¦ ¹èÄ¡ÇÒ Á¤º¸¸¦ °¡Áø ±¸Á¶Ã¼ÀÔ´Ï´Ù.
-* ÀÌ Á¤º¸¸¦ ¹ÙÅÁÀ¸·Î ÄÄÆ÷³ÍÆ®¸¦ ¸¸µé°í µðÀÚÀÌ³Ê°¡ ¹èÄ¡ÇÏµµ·Ï ÇÕ´Ï´Ù.
-*/
+/**
+ * @brief ï¿½ï¿½Ö¹ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼ï¿½Ô´Ï´ï¿½.
+ * ï¿½ï¿½Å¸ï¿½Ó¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ï¿½ï¿½ï¿½â¸¦ ï¿½ï¿½ï¿½ï¿½ ï¿½Þ½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.
+ */
 USTRUCT(BlueprintType)
-struct FMRObjectAnchorInfo
+struct FMRObstacleSpawnInfo
 {
 	GENERATED_BODY()
 
+	UPROPERTY(VisibleAnywhere, Category = "Tile")
+	FGuid ObjectID;
+
+	// ï¿½ï¿½Å¸ï¿½Ó¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ö¹ï¿½ ï¿½ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½: BP_SpikeObstacle)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
+	TSubclassOf<AActor> ActorClassToSpawn;
+
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ½ ï¿½Þ½ï¿½
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
+	TObjectPtr<class UStaticMesh> PreviewMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
+	FTransform ObjectTransform;
+
+	FMRObstacleSpawnInfo()
+	{
+		ObjectID = FGuid::NewGuid();
+		ActorClassToSpawn = nullptr;
+		PreviewMesh = nullptr;
+		ObjectTransform = FTransform::Identity;
+	}
+};
+
+/**
+ * @brief ï¿½ï¿½Ä¿ï¿½ ï¿½ï¿½Ç°(Prop) ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼ï¿½Ô´Ï´ï¿½.
+ * ï¿½ï¿½ï¿½ï¿½ï¿½Ã·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½Æ½ ï¿½Þ½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½Ë´Ï´ï¿½.
+ */
+USTRUCT(BlueprintType)
+struct FMRPropInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, Category = "Tile")
+	FGuid ObjectID;
+
+	// Å¸ï¿½Ï¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ½ ï¿½Þ½ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
 	TObjectPtr<class UStaticMesh> StaticMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
 	FTransform ObjectTransform;
 
-	FMRObjectAnchorInfo()
+	FMRPropInfo()
 	{
+		ObjectID = FGuid::NewGuid();
 		StaticMesh = nullptr;
 		ObjectTransform = FTransform::Identity;
 	}
 };
 
+/**
+ * @class AMRTile
+ * @brief ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½âº» Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ô´Ï´ï¿½.
+ * ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½ ï¿½ï¿½Ç°ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½Ã°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½,
+ * ï¿½ï¿½Å¸ï¿½Ó¿ï¿½ï¿½ï¿½ï¿½ï¿½ ATileManagerï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ö¹ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Õ´Ï´ï¿½.
+ */
 UCLASS()
 class MUSCLERUN_API AMRTile : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	AMRTile();
 
+	/**
+	 * @brief ATileManagerï¿½ï¿½ ï¿½ï¿½ Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ ï¿½ï¿½ ï¿½ï¿½Ö¹ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.
+	 * @return ï¿½ï¿½Ö¹ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½è¿­ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+	 */
+	const TArray<FMRObstacleSpawnInfo>& GetObstacleSpawnData() const { return ObstacleArray; }
+
+	/**
+	 * @brief ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ Transformï¿½ï¿½ ï¿½ï¿½È¯ï¿½Õ´Ï´ï¿½.
+	 * @return EndArrowComponentï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Æ®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	 */
+	FTransform GetEndArrowTransform() const;
+
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-public:
-	// ¿¡µðÅÍ ³ëÃâÀ» ½ÃÅ°Áö ¾Ê½À´Ï´Ù.
-	FOnTileManagerActionStarted OnTileGeneratedOvelaped;
-
-public:
-	UFUNCTION()
-	FORCEINLINE FTransform GetTileTransform() const;
-
-	UFUNCTION()
-	FORCEINLINE void SetTileTransform(const FTransform& NewTransform);
-
-protected:
-	UFUNCTION()
-	void OnOverlapBegin(class UPrimitiveComponent* OverlappedComponent, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-    UFUNCTION(CallInEditor, Category = "MRTile")
-    void UpdateObstaclesFromComponents();
-
-    UFUNCTION(CallInEditor, Category = "MRTile")
-    void UpdatePropsFromComponents();
-
 private:
-	UPROPERTY(VisibleAnywhere, Category = "MRTile")
-	class UStaticMeshComponent* MeshComp;
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ö¹ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½Æ° ï¿½Ô¼ï¿½
+	UFUNCTION(CallInEditor, Category = "MRTile|Actions")
+	void SaveGizmoChangeForObstacle();
 
-	UPROPERTY(EditAnywhere, Category = "MRTile")
-	TArray<FMRObjectAnchorInfo> ObstacleArray;
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ç° ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½Æ° ï¿½Ô¼ï¿½
+	UFUNCTION(CallInEditor, Category = "MRTile|Actions")
+	void SaveGizmoChangeForProp();
 
-	UPROPERTY(EditAnywhere, Category = "MRTile")
-	TArray<FMRObjectAnchorInfo> PropArray;
+	// Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½âº» ï¿½Þ½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
+	UPROPERTY(VisibleAnywhere, Category = "MRTile|Components")
+	TObjectPtr<class UStaticMeshComponent> MeshComp;
 
-	UPROPERTY(EditAnywhere, Category = "MRTile")
-	UArrowComponent* StartArrowComponent;
 
-	UPROPERTY(EditAnywhere, Category = "MRTile")
-	UArrowComponent* EndArrowComponent;
+	// Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å¸ï¿½ï¿½ï¿½ï¿½ Arrow ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
+	UPROPERTY(VisibleAnywhere, Category = "MRTile|Components")
+	TObjectPtr<class UArrowComponent> StartArrowComponent;
 
+	// Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)ï¿½ï¿½ ï¿½ï¿½Å¸ï¿½ï¿½ï¿½ï¿½ Arrow ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
+	UPROPERTY(VisibleAnywhere, Category = "MRTile|Components")
+	TObjectPtr<class UArrowComponent> EndArrowComponent;
+
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½ ï¿½ï¿½Ö¹ï¿½ ï¿½Ì¸ï¿½ï¿½ï¿½ï¿½â¸¦ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½
 	UPROPERTY()
-	class USceneComponent* DefaultScene;
-
-	UPROPERTY(VisibleAnywhere, Category = "MRTile")
-	class UBoxComponent* TriggerVolume;
-
+	TMap<FGuid, TObjectPtr<UStaticMeshComponent>> IDToComponentObstacleMap;
+	
+	// Å¸ï¿½Ï¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ù´ï¿½ ï¿½ï¿½Ä¿ï¿½ ï¿½ï¿½Ç° ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½
 	UPROPERTY()
-	TArray<TObjectPtr<UStaticMeshComponent>> SpawnedObstacleArray;
+	TMap<FGuid, TObjectPtr<UStaticMeshComponent>> IDToComponentPropMap;
+	
+	// ObstacleArrayï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½Õ´Ï´ï¿½.
+	void UpdateObstaclePreviews();
+	
+	// PropArrayï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½Ï¿ï¿½ ï¿½Ù´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½Õ´Ï´ï¿½.
+	void UpdatePropComponents();
 
-	UPROPERTY()
-	TArray<TObjectPtr<UStaticMeshComponent>> SpawnedPropArray;
+protected:
+	// ï¿½ï¿½Ö¹ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½è¿­. ï¿½ï¿½Å¸ï¿½Ó¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Í·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ë´Ï´ï¿½.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MRTile|Spawn Data", meta = (TitleProperty = "ActorClassToSpawn"))
+	TArray<FMRObstacleSpawnInfo> ObstacleArray;
 
-
-
-
-private:
-	void GenerateComponentsFromInfo(const TArray<FMRObjectAnchorInfo>& ObjectArray, TArray<TObjectPtr<UStaticMeshComponent>>& SpawnedObject, const FString& NamePrefix);
-
+	// ï¿½ï¿½Ä¿ï¿½ ï¿½ï¿½Ç° ï¿½ï¿½ï¿½ï¿½ ï¿½è¿­. ï¿½ï¿½ï¿½ï¿½Æ½ ï¿½Þ½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ Å¸ï¿½Ï¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ù½ï¿½ï¿½Ï´ï¿½.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MRTile|Spawn Data", meta = (TitleProperty = "StaticMesh"))
+	TArray<FMRPropInfo> PropArray;
 };
