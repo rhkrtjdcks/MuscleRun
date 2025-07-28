@@ -15,20 +15,22 @@ public:
 	AMRObsrtuctBase();
 
 protected:
-	// 메쉬 컴포넌트입니다.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Obstruct", meta = (AllowPrivateAccess = "true"))
+	virtual void BeginPlay() override;
+
+	// ✨ 모든 장애물이 공통으로 사용할 충돌 처리 함수입니다.
+	UFUNCTION()
+	virtual void OnObstacleHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class USceneComponent* SceneRoot;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Obstruct")
 	class UStaticMeshComponent* MeshComponent;
 
-	// 데미지 양을 저장할 변수입니다.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Obstruct", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Obstruct")
 	float Damage = 25.0f;
 
-	// ✨ 플레이어를 튕겨낼 힘의 크기를 저장할 변수를 추가합니다.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Obstruct", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Obstruct")
 	float KnockbackStrength = 700.0f;
-
-private:
-	// 컴포넌트들의 기준점이 될 루트 컴포넌트입니다.
-	UPROPERTY(VisibleAnywhere)
-	class USceneComponent* SceneRoot;
 };
