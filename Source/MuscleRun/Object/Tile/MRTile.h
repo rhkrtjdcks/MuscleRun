@@ -17,18 +17,14 @@ struct FMRObjectAnchorInfo
 {
 	GENERATED_BODY()
 
-	// (추가) 완전한 동기화를 위한 추가적인 프로퍼티입니다.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Tile")
-	FGuid ObjectID;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
 	TObjectPtr<class UStaticMesh> StaticMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
 	FTransform ObjectTransform;
 
-	FMRObjectAnchorInfo(){
-		ObjectID = FGuid::NewGuid();
+	FMRObjectAnchorInfo()
+	{
 		StaticMesh = nullptr;
 		ObjectTransform = FTransform::Identity;
 	}
@@ -65,10 +61,10 @@ protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
 
     UFUNCTION(CallInEditor, Category = "MRTile")
-    void SaveGizmoChangeForObstacle();
+    void UpdateObstaclesFromComponents();
 
     UFUNCTION(CallInEditor, Category = "MRTile")
-    void SaveGizmoChangeForProp();
+    void UpdatePropsFromComponents();
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "MRTile")
@@ -81,10 +77,10 @@ private:
 	TArray<FMRObjectAnchorInfo> PropArray;
 
 	UPROPERTY(EditAnywhere, Category = "MRTile")
-	class UArrowComponent* StartArrowComponent;
+	UArrowComponent* StartArrowComponent;
 
 	UPROPERTY(EditAnywhere, Category = "MRTile")
-	class UArrowComponent* EndArrowComponent;
+	UArrowComponent* EndArrowComponent;
 
 	UPROPERTY()
 	class USceneComponent* DefaultScene;
@@ -92,22 +88,16 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "MRTile")
 	class UBoxComponent* TriggerVolume;
 
-	UPROPERTY(VisibleAnywhere, Category = "MRTile")
-	TMap<FGuid, TObjectPtr<UStaticMeshComponent>> IDToComponentObstacleMap;
+	UPROPERTY()
+	TArray<TObjectPtr<UStaticMeshComponent>> SpawnedObstacleArray;
 
-	UPROPERTY(VisibleAnywhere, Category = "MRTile")
-	TMap<FGuid, TObjectPtr<UStaticMeshComponent>> IDToComponentPropMap;
-
-	// UPROPERTY()
-	// TArray<TObjectPtr<UStaticMeshComponent>> SpawnedObstacleArray;
-
-	// UPROPERTY()
-	// TArray<TObjectPtr<UStaticMeshComponent>> SpawnedPropArray;
+	UPROPERTY()
+	TArray<TObjectPtr<UStaticMeshComponent>> SpawnedPropArray;
 
 
 
 
 private:
-	void UpdateComponentsFromInfo(const TArray<FMRObjectAnchorInfo>& ObjectArray, TMap<FGuid, TObjectPtr<UStaticMeshComponent>>& IDToComponentMap, const FString& NamePrefix);
+	void GenerateComponentsFromInfo(const TArray<FMRObjectAnchorInfo>& ObjectArray, TArray<TObjectPtr<UStaticMeshComponent>>& SpawnedObject, const FString& NamePrefix);
 
 };
