@@ -9,19 +9,21 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
+#include "Component/MRItemEffectManagerComponent.h"
+#include "Object/Item/ItemBaseActor.h"
 #include "Component/MRHealthComponent.h"
 
 // Sets default values
 AMRPlayerCharacter::AMRPlayerCharacter()
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
-	TriggerVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("TirggerVolume"));
+	TriggerVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerVolume"));
 	TriggerVolume->SetupAttachment(RootComponent);
 
 	SkeletonMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("PlayerMesh"));
-	SkeletonMesh->SetupAttachment(RootComponent);
+	GetMesh()->SetupAttachment(RootComponent);
 
 	HealthComp = CreateDefaultSubobject<UMRHealthComponent>(TEXT("HealthComp"));
 
@@ -73,8 +75,8 @@ void AMRPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	if (UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		Input->BindAction(IA_MRMove, ETriggerEvent::Triggered, this, &AMRPlayerCharacter::OnInputMove);
-		Input->BindAction(IA_MTJump, ETriggerEvent::Started, this, &AMRPlayerCharacter::OnInputJump);
-		Input->BindAction(IA_MTJump, ETriggerEvent::Completed, this, &AMRPlayerCharacter::OnInputJump);
+		Input->BindAction(IA_MTJump, ETriggerEvent::Started, this, &AMRPlayerCharacter::Jump);
+		Input->BindAction(IA_MTJump, ETriggerEvent::Completed, this, &AMRPlayerCharacter::StopJumping);
 	}
 }
 
@@ -117,7 +119,11 @@ void AMRPlayerCharacter::GetDamaged(float DamageAmount)
 	HealthComp->GetDamage(DamageAmount);
 }
 
-void AMRPlayerCharacter::ItemActivated()
+void AMRPlayerCharacter::ItemActivated(EItemEffectTypes ItemTypes)
 {
 	// Implement item activation logic here
+	if (EffectComponent)
+	{
+		EffectComponent->ApplyEffect(ItemTypes);
+	}
 }

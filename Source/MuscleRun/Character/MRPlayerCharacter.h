@@ -1,9 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+	// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Character/Component/MRItemEffectManagerComponent.h"
 #include "InputActionValue.h"
 #include "MRPlayerCharacter.generated.h"
 
@@ -52,11 +53,19 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Player")
 	class UMRHealthComponent* HealthComp;
 
+	UPROPERTY()
+	class UMRItemEffectManagerComponent* EffectComponent;
+
+	UPROPERTY()
+	class AItemBaseActor* CurrentItem;
+
 private:
 	void OnInputMove(const FInputActionValue& Value);
 	void OnInputJump(const FInputActionValue& Value);
 
+public:
+
 	void GetDamaged(float DamageAmount);
 
-	void ItemActivated();
+	void ItemActivated(EItemEffectTypes ItemTypes);
 };

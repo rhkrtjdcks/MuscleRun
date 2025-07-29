@@ -114,9 +114,9 @@ void AMRTile::UpdateObstaclePreviews()
 		{
 			ComponentToUpdate = *ExistingCompPtr;
 		}
-		SpawnedObjectArray.Empty();
+		
 
-		for (int32 i = 0; i < ObjectInfoArray.Num(); ++i)
+		for (int32 i = 0; i < ObstacleArray.Num(); ++i)
 		{
 			const FName CompName = MakeUniqueObjectName(this, UStaticMeshComponent::StaticClass(), *FString::Printf(TEXT("ObstaclePreview_%s"), *Info.ObjectID.ToString()));
 			ComponentToUpdate = NewObject<UStaticMeshComponent>(this, CompName);

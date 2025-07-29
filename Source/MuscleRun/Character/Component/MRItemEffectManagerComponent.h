@@ -10,6 +10,7 @@
 UENUM(BlueprintType)
 enum class EItemEffectTypes : uint8
 {
+	None,
 	Score,
 	Faster
 };
@@ -33,8 +34,10 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-private:
+public:
 	// 여기서 모든 효과를 처리합니다!
 	void ApplyEffect(EItemEffectTypes ItemTypes);
 		
+private:
+	int32 TempScore = 0;
 };
