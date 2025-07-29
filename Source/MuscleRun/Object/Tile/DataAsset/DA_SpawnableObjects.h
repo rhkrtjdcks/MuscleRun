@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(Blueprintable)
 class MUSCLERUN_API UDA_SpawnableObjects : public UPrimaryDataAsset
 {
 	GENERATED_BODY()

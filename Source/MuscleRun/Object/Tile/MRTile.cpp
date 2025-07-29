@@ -10,7 +10,7 @@ AMRTile::AMRTile()
 	PrimaryActorTick.bCanEverTick = false;
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneComponent"));
 
-	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComp_TileEntire"));
+	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshCompTileEntire"));
 	MeshComp->SetupAttachment(RootComponent);
 
 	StartArrowComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("StartArrow"));
@@ -194,5 +194,6 @@ void AMRTile::UpdatePropComponents()
 
 FTransform AMRTile::GetEndArrowTransform() const
 {
+	// UE_LOG(LogTemp, Log, TEXT("CurrentComponentTransform : %s, %s"), *EndArrowComponent->GetComponentTransform().ToString(), *GetFName().ToString());
 	return EndArrowComponent->GetComponentTransform();
 }
