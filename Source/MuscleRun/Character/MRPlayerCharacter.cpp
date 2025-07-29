@@ -121,9 +121,11 @@ void AMRPlayerCharacter::GetDamaged(float DamageAmount)
 
 void AMRPlayerCharacter::ItemActivated(EItemEffectTypes ItemTypes)
 {
+
 	// Implement item activation logic here
 	if (EffectComponent)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("충돌된 아이템 타입: %d"), static_cast<int32>(ItemTypes));
 		EffectComponent->ApplyEffect(ItemTypes);
 	}
 }

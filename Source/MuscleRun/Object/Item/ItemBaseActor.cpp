@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Object/Item/ItemBaseActor.h"
@@ -7,19 +7,22 @@
 #include "Character/MRPlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 
+
 // Sets default values
 AItemBaseActor::AItemBaseActor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
+
+	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+	SetRootComponent(MeshComp);
+
 	TriggerVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerVolume"));
 	TriggerVolume->SetupAttachment(RootComponent);
 	// TriggerVolume->SetBoxExtent()
 
-	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
-	MeshComp->SetupAttachment(RootComponent);
-	// ÄÄÆ÷³ÍÆ® ¿¬°á!
+	// ì»´í¬ë„ŒíŠ¸ ì—°ê²°!
 }
 
 // Called when the game starts or when spawned
@@ -27,20 +30,22 @@ void AItemBaseActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ¿©±â¼­ TriggerVolumeÀÇ ¿À¹ö·¡ÇÎ ÀÌº¥Æ®¸¦ ¹ÙÀÎµù!
+	// ì—¬ê¸°ì„œ TriggerVolumeì˜ ì˜¤ë²„ë˜í•‘ ì´ë²¤íŠ¸ë¥¼ ë°”ì¸ë”©!
 	TriggerVolume->OnComponentBeginOverlap.AddDynamic(this, &AItemBaseActor::OnOverlapBegin);
 }
 
 void AItemBaseActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	// ¿©±â¼­ OtherActor(AMRPlayerCharacter ÀÇ ItemActivate ÇÔ¼ö¸¦ ÅëÇØ, È£ÃâÇØÁÖ¼¼¿ä!
-	// ³¡³Â´Ù¸é, ¿¡µğÅÍ ¼¼ÆÃ¿¡¼­ PlayerÀÇ Collision Preset¿¡¼­ »õ Coliision Channel, ItemÀ» ¸¸µé°í, Ovelap ¸¸ È°¼ºÈ­!
-	// ÀÌ ¾×ÅÍÀÇ Äİ¸®Àü Ã¤³ÎÀ» ItemÀ¸·Î ÇÏ°í, PlayerÀÇ °Íµµ ÄÑ ÁÖ¼¼¿ä!
+	UE_LOG(LogTemp, Warning, TEXT("ì¶©ëŒëœ ì•„ì´í…œ íƒ€ì…: %d"), static_cast<int32>(ItemType));
+	// ì—¬ê¸°ì„œ OtherActor(AMRPlayerCharacter ì˜ ItemActivate í•¨ìˆ˜ë¥¼ í†µí•´, í˜¸ì¶œí•´ì£¼ì„¸ìš”!
+	// ëëƒˆë‹¤ë©´, ì—ë””í„° ì„¸íŒ…ì—ì„œ Playerì˜ Collision Presetì—ì„œ ìƒˆ Coliision Channel, Itemì„ ë§Œë“¤ê³ , Ovelap ë§Œ í™œì„±í™”!
+	// ì´ ì•¡í„°ì˜ ì½œë¦¬ì „ ì±„ë„ì„ Itemìœ¼ë¡œ í•˜ê³ , Playerì˜ ê²ƒë„ ì¼œ ì£¼ì„¸ìš”!
 	AMRPlayerCharacter* PlayerCharacter = Cast<AMRPlayerCharacter>(OtherActor);
 	if (PlayerCharacter && ItemType != EItemEffectTypes::None)
 	{
 		PlayerCharacter->ItemActivated(ItemType);
-		Destroy();
+		UE_LOG(LogTemp, Warning, TEXT("ì¶©ëŒëœ ì•„ì´í…œ íƒ€ì…: %d"), static_cast<int32>(ItemType));
+	
 	}
 }
 

@@ -56,9 +56,6 @@ protected:
 	UPROPERTY()
 	class UMRItemEffectManagerComponent* EffectComponent;
 
-	UPROPERTY()
-	class AItemBaseActor* CurrentItem;
-
 private:
 	void OnInputMove(const FInputActionValue& Value);
 	void OnInputJump(const FInputActionValue& Value);
