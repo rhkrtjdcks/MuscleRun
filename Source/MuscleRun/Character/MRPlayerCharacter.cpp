@@ -21,10 +21,13 @@ AMRPlayerCharacter::AMRPlayerCharacter()
 
 	TriggerVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerVolume"));
 	TriggerVolume->SetupAttachment(RootComponent);
+	TriggerVolume->SetBoxExtent(FVector::One() * 50.0f);
 
 	SkeletonMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("PlayerMesh"));
-	GetMesh()->SetupAttachment(RootComponent);
+	SkeletonMesh->SetupAttachment(RootComponent);
 
+	EffectComponent = CreateDefaultSubobject<UMRItemEffectManagerComponent>(TEXT("ItemComp"));
+	
 	HealthComp = CreateDefaultSubobject<UMRHealthComponent>(TEXT("HealthComp"));
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
@@ -125,7 +128,6 @@ void AMRPlayerCharacter::ItemActivated(EItemEffectTypes ItemTypes)
 	// Implement item activation logic here
 	if (EffectComponent)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("충돌된 아이템 타입: %d"), static_cast<int32>(ItemTypes));
 		EffectComponent->ApplyEffect(ItemTypes);
 	}
 }

@@ -34,18 +34,55 @@ void AItemBaseActor::BeginPlay()
 	TriggerVolume->OnComponentBeginOverlap.AddDynamic(this, &AItemBaseActor::OnOverlapBegin);
 }
 
+void AItemBaseActor::Destroyed()
+{
+	Super::Destroyed();
+
+	if (VanishSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, VanishSound, GetActorLocation());
+	}
+
+	if (VanishEffect)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(this, VanishEffect, GetActorLocation());
+	}
+
+	Destroy();
+}
+
 void AItemBaseActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("충돌된 아이템 타입: %d"), static_cast<int32>(ItemType));
 	// 여기서 OtherActor(AMRPlayerCharacter 의 ItemActivate 함수를 통해, 호출해주세요!
 	// 끝냈다면, 에디터 세팅에서 Player의 Collision Preset에서 새 Coliision Channel, Item을 만들고, Ovelap 만 활성화!
 	// 이 액터의 콜리전 채널을 Item으로 하고, Player의 것도 켜 주세요!
 	AMRPlayerCharacter* PlayerCharacter = Cast<AMRPlayerCharacter>(OtherActor);
 	if (PlayerCharacter && ItemType != EItemEffectTypes::None)
 	{
+		if (PickupSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, PickupSoundCue, GetActorLocation());
+		}
+
+		if (PickupEffect)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), PickupEffect, GetActorLocation());
+		}
+		/*UE_LOG(LogTemp, Warning, TEXT("충돌: %s(%s) 와 %s(%s)"),
+			*GetName(), *OverlappedComp->GetName(),
+			*OtherActor->GetName(), *OtherComp->GetName());*/
 		PlayerCharacter->ItemActivated(ItemType);
-		UE_LOG(LogTemp, Warning, TEXT("충돌된 아이템 타입: %d"), static_cast<int32>(ItemType));
-	
+
+		SetActorHiddenInGame(true);
+		SetActorEnableCollision(false);
+
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, this, &AItemBaseActor::DestroySelf, 0.8f, false);
 	}
+}
+
+void AItemBaseActor::DestroySelf()
+{
+	Destroy();
 }
 
