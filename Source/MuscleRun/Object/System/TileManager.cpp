@@ -48,6 +48,10 @@ void ATileManager::Tick(float DeltaTime)
 
 	if (FVector::DotProduct(PlayerLocation - TileEndLocation, TileForwardVector) > 0.f)
 	{
+		UE_LOG(LogTemp, Log, TEXT("DotProduct Result : %.2f <= %s,  %s"),
+		FVector::DotProduct(PlayerLocation - TileEndLocation, TileForwardVector),
+			*(PlayerLocation - TileEndLocation).ToString(),
+			*TileForwardVector.ToString());
 		CurrentTrackingTileIndex++;
 
 		// [수정] TArray의 인덱스로 다음 추적 타일에 안전하게 접근합니다.
@@ -128,6 +132,7 @@ void ATileManager::SpawnObjectsOnTile(AMRTile* TargetTile, TArray<TObjectPtr<AAc
 
 			FTransform SpawnTransform = Point->GetComponentTransform();
 			AActor* SpawnedObject = GetWorld()->SpawnActor<AActor>(ClassToSpawn, SpawnTransform);
+			UE_LOG(LogTemp, Log, TEXT("SpawnedComponentTransform : %s, %s"), *Point->GetComponentTransform().ToString(), *Point->GetFName().ToString());
 			if (SpawnedObject)
 			{
 				OutSpawnedActors.Add(SpawnedObject);
