@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Character/Component/MRItemEffectManagerComponent.h"
@@ -21,7 +21,7 @@ void UMRItemEffectManagerComponent::BeginPlay()
 	Super::BeginPlay();
 }
 
-// °¢°¢ÀÇ È¿°ú¸¦ ±¸ÇöÇÏ´Â ÇÔ¼öÀÔ´Ï´Ù.
+// ê°ê°ì˜ íš¨ê³¼ë¥¼ êµ¬í˜„í•˜ëŠ” í•¨ìˆ˜ì…ë‹ˆë‹¤.
 void UMRItemEffectManagerComponent::ApplyEffect(EItemEffectTypes ItemTypes)
 {
 	AActor* Owner = GetOwner();
@@ -34,9 +34,10 @@ void UMRItemEffectManagerComponent::ApplyEffect(EItemEffectTypes ItemTypes)
 		AMRPlayerCharacter* Player = Cast<AMRPlayerCharacter>(Owner);
 		if (Player)
 		{
-			// ¿©±â ±âº» ¾ÆÀÌÅÛÀÇ È¿°ú¸¦ Àû¿ëÇÕ´Ï´Ù. GameModeÀÇ Score¸¦ ¿Ã·ÁÁÖ´Â ·ÎÁ÷À» ÀÛ¼ºÇØº¸¼¼¿ä!
+			// ì—¬ê¸° ê¸°ë³¸ ì•„ì´í…œì˜ íš¨ê³¼ë¥¼ ì ìš©í•©ë‹ˆë‹¤. GameModeì˜ Scoreë¥¼ ì˜¬ë ¤ì£¼ëŠ” ë¡œì§ì„ ì‘ì„±í•´ë³´ì„¸ìš”!
+			UE_LOG(LogTemp, Warning, TEXT("ì¶©ëŒëœ ì•„ì´í…œ íƒ€ì…: %d"), static_cast<int32>(ItemTypes));
 			TempScore += 10;
-			UE_LOG(LogTemp, Log, TEXT("Score +10! ÇöÀç Á¡¼ö: %d"), TempScore);
+			UE_LOG(LogTemp, Log, TEXT("Score +10! í˜„ì¬ ì ìˆ˜: %d"), TempScore);
 		}
 	}
 		break;
@@ -48,12 +49,12 @@ void UMRItemEffectManagerComponent::ApplyEffect(EItemEffectTypes ItemTypes)
 		{
 			float& Speed = Player->GetCharacterMovement()->MaxWalkSpeed;
 			Speed += 300.f;
-			UE_LOG(LogTemp, Log, TEXT("¼ÓµµÁõ°¡! ÇöÀç ¼Óµµ: %.1f"), Speed);
+			UE_LOG(LogTemp, Log, TEXT("ì†ë„ì¦ê°€! í˜„ì¬ ì†ë„: %.1f"), Speed);
 		}
 	}
 		break;
 	
-		// ¾ÆÀÌÅÛÀ» Ãß°¡ÇÒ ¶§´Â Çì´õ¿¡¼­ EnumÀ» ¼öÁ¤ÇÏ°í ¿©±â Ãß°¡!
+		// ì•„ì´í…œì„ ì¶”ê°€í•  ë•ŒëŠ” í—¤ë”ì—ì„œ Enumì„ ìˆ˜ì •í•˜ê³  ì—¬ê¸° ì¶”ê°€!
 	default:
 		break;
 	}
