@@ -50,7 +50,7 @@ private:
 
 	// 난이도가 상승하기까지의 시간 간격 (초)
 	UPROPERTY(EditDefaultsOnly, Category = "GameMode|Difficulty")
-	float TimeBetweenDifficultyIncrease = 10.0f;
+	float TimeBetweenDifficultyIncrease = 5.0f;
 
 	// 한 번에 증가할 속도 배율
 	UPROPERTY(EditDefaultsOnly, Category = "GameMode|Difficulty")
