@@ -5,6 +5,7 @@
 #include "Object/Tile/DataAsset/DA_SpawnableObjects.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sys/GameState/MRGameState.h"
+#include "Character/MRPlayerCharacter.h"
 
 ATileManager::ATileManager()
 {
@@ -64,10 +65,32 @@ void ATileManager::Tick(float DeltaTime)
 		if (ActiveTileGroups.IsValidIndex(CurrentTrackingTileIndex))
 		{
 			CurrentTrackingTile = ActiveTileGroups[CurrentTrackingTileIndex].Tile;
-
 			SpawnTile();
 			DestroyOldestTileGroup();
 		}
+	}
+	if (ActiveTileGroups.IsValidIndex(CurrentTrackingTileIndex))
+	{
+		FTileGroup& CurrentGroup = ActiveTileGroups[CurrentTrackingTileIndex];
+		if (CurrentGroup.bIsTurnTrigger)
+		{
+			FVector PlaneOrigin = CurrentGroup.Tile->GetEndArrowTransform().GetLocation();
+			FVector PlaneNormal = CurrentGroup.Tile->GetEndArrowTransform().GetRotation().GetForwardVector();
+			FVector PlayerLocation = PlayerCharacter->GetActorLocation();
+			FVector VectorToPlayer = PlayerLocation - PlaneOrigin;
+
+			const float DotProduct = FVector::DotProduct(PlaneNormal, VectorToPlayer);
+			if (DotProduct > 0.f)
+			{
+				AMRPlayerCharacter* PlayerCharacterRef = Cast<AMRPlayerCharacter>(PlayerCharacter);
+				if (PlayerCharacterRef)
+				{
+					// PlayerCharacterRef->ExecuteForceTurn(PlaneOrigin, CurrentGroup.ExitDirection);
+					bIsTrunTrigger = false;
+				}
+			}
+		}
+
 	}
 }
 
@@ -93,9 +116,25 @@ void ATileManager::SpawnTile()
 
 			if (TypeToSpawn != ETileType::Straight)
 			{
-				NewGroup.bIsTrunTrigger = true;
+				int32 CastedType = static_cast<int32>(LastTileExitDirection);
+				switch (TypeToSpawn)
+				{
+				case ETileType::TurnLeft:
+					CastedType -= 1;
+					break;
+				case ETileType::TurnRight:
+					CastedType += 1;
+					break;
+				default:
+					ensureMsgf(false, TEXT("CalculateNextDirection received an unexpected TileType!"));
+					break;
+				}
+				LastTileExitDirection = static_cast<ETrackDirection>((CastedType + 4) % 4);
+
+				NewGroup.bIsTurnTrigger = true;
 			}
-			NewGroup.ExitDirection = New
+			NewGroup.ExitDirection = LastTileExitDirection;
+			//
 
 			SpawnObjectsOnTile(NewTile, NewGroup.ContainedActors);
 

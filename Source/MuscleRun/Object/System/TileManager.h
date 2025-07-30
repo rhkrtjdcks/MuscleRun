@@ -69,4 +69,7 @@ private:
 	// [수정] 현재 추적 중인 타일의 인덱스를 관리. TArray와 함께 사용하면 매우 효율적입니다.
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	int32 CurrentTrackingTileIndex = 0;
+
+	UPROPERTY()
+	ETrackDirection LastTileExitDirection = ETrackDirection::North;
 };

@@ -49,7 +49,7 @@ struct FTileGroup
 	UPROPERTY()
 	TArray<TObjectPtr<class AActor>> ContainedActors;
 
-	bool bIsTrunTrigger = false;
+	bool bIsTurnTrigger = false;
 
 	ETrackDirection ExitDirection = ETrackDirection::North;
 
