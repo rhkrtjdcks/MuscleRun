@@ -177,8 +177,7 @@ void AMRPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	{
 		Input->BindAction(IA_Left, ETriggerEvent::Triggered, this, &AMRPlayerCharacter::MoveLeft);
 		Input->BindAction(IA_Right, ETriggerEvent::Triggered, this, &AMRPlayerCharacter::MoveRight);
-		Input->BindAction(IA_MTJump, ETriggerEvent::Started, this, &AMRPlayerCharacter::Jump);
-		Input->BindAction(IA_MTJump, ETriggerEvent::Completed, this, &AMRPlayerCharacter::StopJumping);
+		Input->BindAction(IA_MTJump, ETriggerEvent::Triggered, this, &AMRPlayerCharacter::OnInputJump);
 	}
 }
 
@@ -192,9 +191,13 @@ void AMRPlayerCharacter::OnStateEnter(EPlayerState State)
 		GetCharacterMovement()->MaxWalkSpeed = BASE_SPEED_MAX;
 		break;
 	case EPlayerState::Jump:
-		// 점프 상태에 진입하면 캐릭터의 내장 점프 함수를 호출합니다.
-		Super::Jump(); // ACharacter::Jump() 호출
+		// [수정] ACharacter의 내장 점프 함수를 여기서 직접 호출합니다.
+		Super::Jump();
+
+		// [추가] 점프와 동시에 실행하고 싶은 추가 로직(사운드, 이펙트 등)도 여기에 넣습니다.
+		// 예시: UGameplayStatics::PlaySoundAtLocation(this, JumpSound, GetActorLocation());
 		break;
+
 		// ... 다른 상태에 대한 진입 로직
 	default:
 		break;
@@ -206,20 +209,16 @@ void AMRPlayerCharacter::OnStateUpdate(float DeltaTime)
 {
 	switch (CurrentState)
 	{
+	case EPlayerState::Idle:		UpdateIdle(DeltaTime); break;
 	case EPlayerState::Run:			UpdateRun(DeltaTime); break;
 	case EPlayerState::Jump:		UpdateJump(DeltaTime); break;
 	case EPlayerState::Sliding:		UpdateSliding(DeltaTime); break;
-	case EPlayerState::Adrenaline:	UpdateAdrenaline(DeltaTime); break;
 	default:
 		break;
 	}
 }
 
 void AMRPlayerCharacter::UpdateIdle(float DeltaTime)
-{
-}
-
-void AMRPlayerCharacter::UpdateWalk(float DeltaTime)
 {
 }
 
@@ -235,14 +234,10 @@ void AMRPlayerCharacter::UpdateSliding(float DeltaTime)
 {
 }
 
-void AMRPlayerCharacter::UpdateAdrenaline(float DeltaTime)
-{
-}
 
 void AMRPlayerCharacter::Jump()
 {
-	// 이 함수는 이제 상태 머신을 통해 호출됩니다 (OnStateEnter에서 Super::Jump() 호출).
-	// 직접적인 입력 바인딩은 제거되었습니다.
+
 }
 
 // [수정] 땅에 착지하면 Run 상태로 전환합니다.

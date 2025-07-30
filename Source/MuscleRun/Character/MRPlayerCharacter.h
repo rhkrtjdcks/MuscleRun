@@ -13,11 +13,9 @@ UENUM(BlueprintType)
 enum class EPlayerState : uint8
 {
 	Idle		UMETA(DisplayName = "Idle"), 
-	Walk		UMETA(DisplayName = "Walk"),
 	Run			UMETA(DisplayName = "Run"),
 	Jump		UMETA(DisplayName = "Jump"),
 	Sliding		UMETA(DisplayName = "Sliding"),
-	Adrenaline	UMETA(DisplayName = "Adrenaline"),
 };
 
 UENUM(BlueprintType)
@@ -70,11 +68,9 @@ private:
 
 	// 각 상태별 업데이트 로직
 	void UpdateIdle(float DeltaTime);
-	void UpdateWalk(float DeltaTime);
 	void UpdateRun(float DeltaTime);
 	void UpdateJump(float DeltaTime);
 	void UpdateSliding(float DeltaTime);
-	void UpdateAdrenaline(float DeltaTime);
 
 
 public:	
