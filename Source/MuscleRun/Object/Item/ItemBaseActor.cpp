@@ -45,15 +45,16 @@ void AItemBaseActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor*
 	AMRPlayerCharacter* PlayerCharacter = Cast<AMRPlayerCharacter>(OtherActor);
 	if (PlayerCharacter && ItemType != EItemEffectTypes::None)
 	{
-		PlayPickupEffect();
+		PlayPickupEffect(); // 줍는 사운드/이펙트 재생
 		/*UE_LOG(LogTemp, Warning, TEXT("충돌: %s(%s) 와 %s(%s)"),
 			*GetName(), *OverlappedComp->GetName(),
 			*OtherActor->GetName(), *OtherComp->GetName());*/
-		PlayerCharacter->ItemActivated(ItemType);
+		PlayerCharacter->ItemActivated(ItemType); // 아이템 효과 발동 (플레이어에게 전달)
 
-		SetActorHiddenInGame(true);
-		SetActorEnableCollision(false);
+		SetActorHiddenInGame(true);   // 시각적으로 숨김
+		SetActorEnableCollision(false); // 충돌 비활성화
 
+		// 0.8초 뒤에 DestroySelf() 호출
 		FTimerHandle DestroyTimerHandle;
 		GetWorldTimerManager().SetTimer(DestroyTimerHandle, this, &AItemBaseActor::DestroySelf, 0.8f, false);
 	}
@@ -63,16 +64,14 @@ void AItemBaseActor::DestroySelf()
 {
 	PlayVanishEffect();
 
-	const float VanishDelay = 2.0f;
-
 	Destroy();
 }
 
 void AItemBaseActor::PlayPickupEffect()
 {
-	if (PickupSoundCue)
+	if (PickupSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, PickupSoundCue, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(this, PickupSound, GetActorLocation());
 	}
 	
 	if (PickupEffect)
