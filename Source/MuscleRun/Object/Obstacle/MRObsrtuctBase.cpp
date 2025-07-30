@@ -1,62 +1,51 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "MRObsrtuctBase.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/SceneComponent.h"
+#include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/DamageType.h"
-#include "Character/MRPlayerCharacter.h"
-#include "Components/BoxComponent.h"
-#include "Components/StaticMeshComponent.h"
 
-
-
-// Sets default values
 AMRObsrtuctBase::AMRObsrtuctBase()
 {
-	// 컴포넌트를 생성하고 루트 컴포넌트에 붙입니다.
-    //MeshComponent = CreateDefaultSubobject<UMeshComponent>("MeshComp");
-    // ...
-     // 이 클래스 자체는 틱을 사용하지 않으므로 꺼두는 것이 효율적입니다.
-    PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = false;
 
-    // 1. 충돌을 감지할 박스(TriggerVolume)를 생성하고 액터의 루트(중심)로 설정합니다.
-    TriggerVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerVolume"));
-    TriggerVolume->SetupAttachment(RootComponent);
+	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+	RootComponent = SceneRoot;
 
-    // 2. 외형을 보여줄 메시(MeshComponent)를 생성합니다.
-    MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+	MeshComponent->SetupAttachment(RootComponent);
 
-    // 3. 메시를 루트(TriggerVolume)에 붙여서 함께 움직이도록 합니다.
-    MeshComponent->SetupAttachment(RootComponent);
+	// ✨ 모든 장애물이 기본적으로 플레이어와 부딪히도록(Block) 설정합니다.
+	MeshComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Block);
+	MeshComponent->SetNotifyRigidBodyCollision(true);
 }
 
-// Called when the game starts or when spawned
 void AMRObsrtuctBase::BeginPlay()
 {
 	Super::BeginPlay();
-
-    // 델리게이트를 여기서 바인딩합니다.
-	TriggerVolume->OnComponentBeginOverlap.AddDynamic(this, &AMRObsrtuctBase::OnOverlapBegin);
-
+	// ✨ OnObstacleHit 함수를 이벤트에 연결합니다.
+	MeshComponent->OnComponentHit.AddDynamic(this, &AMRObsrtuctBase::OnObstacleHit);
 }
 
-void AMRObsrtuctBase::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AMRObsrtuctBase::OnObstacleHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-    AMRPlayerCharacter* PlayerCharacter = Cast<AMRPlayerCharacter>(OtherActor);
-    if (!PlayerCharacter)
-    {
-        return;
-    }
-    ApplyObstacleDamage(PlayerCharacter);
+	if (!OtherActor || OtherActor == this)
+	{
+		return;
+	}
 
-    // 작동 확인용 로그 메시지
-    UE_LOG(LogTemp, Warning, TEXT("플레이어와 충돌! 데미지를 입혔습니다."));
+	// ✨ 부딪힌 대상이 플레이어 캐릭터라면, 데미지와 넉백을 적용합니다.
+	ACharacter* PlayerCharacter = Cast<ACharacter>(OtherActor);
+	if (PlayerCharacter)
+	{
+		UGameplayStatics::ApplyDamage(PlayerCharacter, Damage, UGameplayStatics::GetPlayerController(this, 0), this, UDamageType::StaticClass());
+
+		FVector KnockbackDirection = -Hit.ImpactNormal;
+		KnockbackDirection.Z = 0.5f;
+		KnockbackDirection.Normalize();
+
+		PlayerCharacter->LaunchCharacter(KnockbackDirection * KnockbackStrength, true, true);
+	}
 }
-
-void AMRObsrtuctBase::ApplyObstacleDamage(AActor* OtherActor)
-{
-    // 실무자(MakeDamage)를 호출합니다.
-      // 데미지 값은 이 클래스가 원래 가지고 있던 'Damage' 변수를 넘겨줍니다.
-    // OtherActor->MakeDamage(Damage);
-}
-

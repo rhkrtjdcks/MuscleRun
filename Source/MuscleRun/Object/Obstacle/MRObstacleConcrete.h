@@ -6,11 +6,7 @@
 #include "MRObsrtuctBase.h"
 #include "MRObstacleConcrete.generated.h"
 
-/**
- * 구체적인 장애물의 데미지와 기타 로직을 정의하는 클래스입니다.
- * 리팩토링 예정.
- * 
- */
+class UProjectileMovementComponent;
 
 UCLASS()
 class MUSCLERUN_API AMRObstacleConcrete : public AMRObsrtuctBase
@@ -22,9 +18,17 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
 	virtual void Tick(float DeltaTime) override;
 
+	// ✨ 부모의 OnObstacleHit 함수를 '오버라이드(재정의)'하여 기능을 확장합니다.
+	virtual void OnObstacleHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
+
 protected:
-	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
+	UProjectileMovementComponent* ProjectileMovementComponent;
+
+private:
+	FVector StartLocation;
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float MoveDistance = 500.0f;
 };
