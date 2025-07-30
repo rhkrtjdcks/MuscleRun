@@ -95,7 +95,7 @@ void ATileManager::SpawnTile()
 			{
 				NewGroup.bIsTrunTrigger = true;
 			}
-			NewGroup.ExitDirection()
+			NewGroup.ExitDirection = New
 
 			SpawnObjectsOnTile(NewTile, NewGroup.ContainedActors);
 
