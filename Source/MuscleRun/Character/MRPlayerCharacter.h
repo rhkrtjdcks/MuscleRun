@@ -10,6 +10,17 @@
 #include "MRPlayerCharacter.generated.h"
 
 UENUM(BlueprintType)
+enum class EPlayerState : uint8
+{
+	Idle		UMETA(DisplayName = "Idle"), 
+	Walk		UMETA(DisplayName = "Walk"),
+	Run			UMETA(DisplayName = "Run"),
+	Jump		UMETA(DisplayName = "Jump"),
+	Sliding		UMETA(DisplayName = "Sliding"),
+	Adrenaline	UMETA(DisplayName = "Adrenaline"),
+};
+
+UENUM(BlueprintType)
 enum class ETrackDirection : uint8
 {
 	North, // +X 축으로 전진
@@ -35,17 +46,38 @@ public:
 	// Sets default values for this character's properties
 	AMRPlayerCharacter();
 
+	// 상태 변경을 위한 메인 함수
+	UFUNCTION(BlueprintCallable, Category = "State Machine")
+	void SetState(EPlayerState NewState);
+
+	// 현재 상태를 반환하는 함수
+	UFUNCTION(BlueprintPure, Category = "State Machine")
+	EPlayerState GetCurrentState() const { return CurrentState; }
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override; // Tick 함수는 한 번만 선언합니다.
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	// 상태 관련 변수 및 함수
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State Machine")
+	EPlayerState CurrentState;
+
+private:
+	void OnStateEnter(EPlayerState State);
+	void OnStateUpdate(float DeltaTime);
+
+	// 각 상태별 업데이트 로직
+	void UpdateIdle(float DeltaTime);
+	void UpdateWalk(float DeltaTime);
+	void UpdateRun(float DeltaTime);
+	void UpdateJump(float DeltaTime);
+	void UpdateSliding(float DeltaTime);
+	void UpdateAdrenaline(float DeltaTime);
+
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	// 코요테 타임을 위해 Jump 함수를 오버라이드합니다.
 	virtual void Jump() override;
 	

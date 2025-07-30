@@ -58,6 +58,18 @@ AMRPlayerCharacter::AMRPlayerCharacter()
 	GetCharacterMovement()->GravityScale = BASE_GRAVITY_SCALE;
 
 	// --- 추가 설정 및 초기화 ---
+
+	// 상태 변수의 초기값을 설정합니다.
+	CurrentState = EPlayerState::Idle;
+}
+
+// SetState: 캐릭터의 상태를 변경하는 유일한 함수입니다.
+void AMRPlayerCharacter::SetState(EPlayerState NewState)
+{
+	if (CurrentState == NewState) return;
+
+	CurrentState = NewState;
+	OnStateEnter(CurrentState);
 }
 
 // Called when the game starts or when spawned
@@ -75,6 +87,9 @@ void AMRPlayerCharacter::BeginPlay()
 	}
 
 	CachedGameState = Cast<AMRGameState>(UGameplayStatics::GetGameState(this));
+
+	// [수정] 게임 시작 시 Idle이 아닌 Run 상태로 바로 전환합니다.
+	SetState(EPlayerState::Run);
 }
 
 // Called every frame
@@ -148,6 +163,9 @@ void AMRPlayerCharacter::Tick(float DeltaTime)
 			SetActorLocation(NewLocation);
 		}
 	}
+
+	// [추가] 상태 머신 업데이트 로직을 매 프레임 호출합니다.
+	OnStateUpdate(DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -164,26 +182,83 @@ void AMRPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	}
 }
 
-void AMRPlayerCharacter::Jump()
+// [추가] 상태 진입 시 실행할 로직을 추가합니다.
+void AMRPlayerCharacter::OnStateEnter(EPlayerState State)
 {
-	Super::Jump();
+	switch (State)
+	{
+	case EPlayerState::Run:
+		// 달리기 상태에 진입하면 캐릭터의 최고 속도를 설정합니다.
+		GetCharacterMovement()->MaxWalkSpeed = BASE_SPEED_MAX;
+		break;
+	case EPlayerState::Jump:
+		// 점프 상태에 진입하면 캐릭터의 내장 점프 함수를 호출합니다.
+		Super::Jump(); // ACharacter::Jump() 호출
+		break;
+		// ... 다른 상태에 대한 진입 로직
+	default:
+		break;
+	}
 }
 
+// [추가] 상태에 따라 매 프레임 실행할 로직을 연결합니다.
+void AMRPlayerCharacter::OnStateUpdate(float DeltaTime)
+{
+	switch (CurrentState)
+	{
+	case EPlayerState::Run:			UpdateRun(DeltaTime); break;
+	case EPlayerState::Jump:		UpdateJump(DeltaTime); break;
+	case EPlayerState::Sliding:		UpdateSliding(DeltaTime); break;
+	case EPlayerState::Adrenaline:	UpdateAdrenaline(DeltaTime); break;
+	default:
+		break;
+	}
+}
+
+void AMRPlayerCharacter::UpdateIdle(float DeltaTime)
+{
+}
+
+void AMRPlayerCharacter::UpdateWalk(float DeltaTime)
+{
+}
+
+void AMRPlayerCharacter::UpdateRun(float DeltaTime)
+{
+}
+
+void AMRPlayerCharacter::UpdateJump(float DeltaTime)
+{
+}
+
+void AMRPlayerCharacter::UpdateSliding(float DeltaTime)
+{
+}
+
+void AMRPlayerCharacter::UpdateAdrenaline(float DeltaTime)
+{
+}
+
+void AMRPlayerCharacter::Jump()
+{
+	// 이 함수는 이제 상태 머신을 통해 호출됩니다 (OnStateEnter에서 Super::Jump() 호출).
+	// 직접적인 입력 바인딩은 제거되었습니다.
+}
+
+// [수정] 땅에 착지하면 Run 상태로 전환합니다.
 void AMRPlayerCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
+	SetState(EPlayerState::Run);
 }
 
-
+// [수정] 점프 입력을 받으면 상태를 Jump로 변경합니다.
 void AMRPlayerCharacter::OnInputJump(const FInputActionValue& Value)
 {
-	if (Value.Get<bool>())
+	// 공중에 떠 있는 상태(점프, 낙하)가 아닐 때만 점프를 허용합니다.
+	if (GetCharacterMovement()->IsMovingOnGround())
 	{
-		Super::Jump();
-	}
-	else
-	{
-		StopJumping();
+		SetState(EPlayerState::Jump);
 	}
 }
 
