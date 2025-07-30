@@ -5,27 +5,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Data/MRDataType.h"
 #include "TileManager.generated.h"
 
 class AMRTile;
 class USpawnLocationComponent; // [수정] 이름 변경 반영
-
-/**
- * @brief 타일과 그 위에 스폰된 모든 액터들을 하나의 그룹으로 묶어 관리하기 위한 구조체입니다.
- */
-USTRUCT()
-struct FTileGroup
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	TObjectPtr<AMRTile> Tile;
-
-	UPROPERTY()
-	TArray<TObjectPtr<AActor>> ContainedActors;
-
-	FTileGroup() : Tile(nullptr) {}
-};
 
 /**
  * @class ATileManager
@@ -42,6 +26,9 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE int32 GetTileGroupNum() { return ActiveTileGroups.Num(); }
 
 private:
 	void SpawnTile();
@@ -61,14 +48,9 @@ private:
 
 	// --- 타일 관련 ---
     // 디자이너가 블루프린트 에디터에서 지정할 타일 클래스들
-    UPROPERTY(EditDefaultsOnly, Category = "Tile Management|Tile Types")
-    TSubclassOf<AMRTile> StraightTileClass;
+	UPROPERTY(EditDefaultsOnly, Category = "Tile Management|Tile Types")
+    TMap<ETileType, TSubclassOf<AMRTile>> TileClassMap;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Tile Management|Tile Types")
-    TSubclassOf<AMRTile> TurnLeftTileClass;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Tile Management|Tile Types")
-    TSubclassOf<AMRTile> TurnRightTileClass;
 
 	// --- 상태 변수들 ---
 
@@ -76,7 +58,6 @@ private:
 	TObjectPtr<ACharacter> PlayerCharacter;
 
 	// [수정] TQueue 대신 TArray를 사용하여 활성화된 타일 그룹들을 관리합니다.
-	UPROPERTY()
 	TArray<FTileGroup> ActiveTileGroups;
 
 	UPROPERTY()
@@ -86,5 +67,6 @@ private:
 	TObjectPtr<AMRTile> CurrentTrackingTile;
 
 	// [수정] 현재 추적 중인 타일의 인덱스를 관리. TArray와 함께 사용하면 매우 효율적입니다.
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	int32 CurrentTrackingTileIndex = 0;
 };

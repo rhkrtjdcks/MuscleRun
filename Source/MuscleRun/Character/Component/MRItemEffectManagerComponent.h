@@ -4,16 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Data/MRDataType.h"
 #include "MRItemEffectManagerComponent.generated.h"
 
-// 아이템 타입입니다. 여기 정의한 타입들을 받아 아이템 효과를 switch 안에서 구현합니다.
-UENUM(BlueprintType)
-enum class EItemEffectTypes : uint8
-{
-	None,
-	Score,
-	Faster
-};
 
 /*
 * 효과를 적용하는 컴포넌트입니다.

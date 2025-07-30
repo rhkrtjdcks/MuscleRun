@@ -1,4 +1,4 @@
-	// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -7,24 +7,10 @@
 #include "Character/Component/MRItemEffectManagerComponent.h"
 #include "InputActionValue.h"
 #include "../Sys/GameState/MRGameState.h"
+#include "Component/MRHealthComponent.h"
+#include "Data/MRDataType.h"
 #include "MRPlayerCharacter.generated.h"
 
-UENUM(BlueprintType)
-enum class ETrackDirection : uint8
-{
-	North, // +X 축으로 전진
-	East,  // +Y 축으로 전진
-	South, // -X 축으로 전진
-	West   // -Y 축으로 전진
-};
-
-UENUM(BlueprintType)
-enum class ECharacterLane : uint8
-{
-	Left = 0,
-	Center,
-	Right
-};
 
 UCLASS()
 class MUSCLERUN_API AMRPlayerCharacter : public ACharacter
@@ -54,6 +40,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lanes")
 	ETrackDirection CurrentTrackDirection = ETrackDirection::North;
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE float GetHealth(){ return HealthComp->RetHealth(); }
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Player")
@@ -88,6 +77,12 @@ protected:
 	void MoveLeft();
 	void MoveRight();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
+	ECharacterLane CurrentLane = ECharacterLane::Center;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane");
+	ECharacterLane TargetLane = ECharacterLane::Center;
+
 private:
 
 	void StartLaneSwitch();
@@ -101,8 +96,7 @@ private:
 	UPROPERTY()
     TObjectPtr<AMRGameState> CachedGameState;
 
-	ECharacterLane CurrentLane = ECharacterLane::Center;
-	ECharacterLane TargetLane = ECharacterLane::Center;
+
 	bool bIsSwitchingLane = false;
 	float LaneSwitchAlpha = 0.0f;
 

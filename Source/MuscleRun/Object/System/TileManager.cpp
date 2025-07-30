@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "Object/Tile/DataAsset/DA_SpawnableObjects.h"
 #include "Kismet/GameplayStatics.h"
+#include "Sys/GameState/MRGameState.h"
 
 ATileManager::ATileManager()
 {
@@ -33,6 +34,11 @@ void ATileManager::BeginPlay()
 	{
 		CurrentTrackingTile = ActiveTileGroups[0].Tile;
 		CurrentTrackingTileIndex = 0;
+	}
+
+	if (AMRGameState* GS = GetWorld()->GetGameState<AMRGameState>())
+	{
+		GS->RegisterTileManager(this);
 	}
 }
 
@@ -73,18 +79,31 @@ void ATileManager::SpawnTile()
 		return;
 	}
 
-	AMRTile* NewTile = GetWorld()->SpawnActor<AMRTile>(TileClass, NextSpawnPointTransform);
-	if (NewTile)
+	ETileType TypeToSpawn = ETileType::Straight; // 추후 로직 구현 DecideNextTileType()
+	TSubclassOf<AMRTile>* FoundClassPtr = TileClassMap.Find(TypeToSpawn);
+
+	if (ensure(FoundClassPtr && *FoundClassPtr))
 	{
-		FTileGroup NewGroup;
-		NewGroup.Tile = NewTile;
+		TSubclassOf<AMRTile> ClassToSpawn = *FoundClassPtr;
+		AMRTile* NewTile = GetWorld()->SpawnActor<AMRTile>(ClassToSpawn, NextSpawnPointTransform);
+		if (ensure(NewTile))
+		{
+			FTileGroup NewGroup;
+			NewGroup.Tile = NewTile;
 
-		SpawnObjectsOnTile(NewTile, NewGroup.ContainedActors);
+			if (TypeToSpawn != ETileType::Straight)
+			{
+				NewGroup.bIsTrunTrigger = true;
+			}
+			NewGroup.ExitDirection()
 
-		// [수정] TArray의 맨 뒤에 새 그룹을 추가합니다.
-		ActiveTileGroups.Add(NewGroup);
+			SpawnObjectsOnTile(NewTile, NewGroup.ContainedActors);
 
-		NextSpawnPointTransform = NewTile->GetEndArrowTransform();
+			// [수정] TArray의 맨 뒤에 새 그룹을 추가합니다.
+			ActiveTileGroups.Add(NewGroup);
+
+			NextSpawnPointTransform = NewTile->GetEndArrowTransform();
+		}
 	}
 }
 

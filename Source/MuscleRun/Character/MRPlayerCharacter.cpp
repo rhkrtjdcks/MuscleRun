@@ -14,6 +14,7 @@
 #include "Component/MRHealthComponent.h"
 #include <Sys/GameState/MRGameState.h>
 #include "Kismet/GameplayStatics.h"
+#include "../Sys/WidgetSubSystem/MRUIManager.h"
 
 // Sets default values
 AMRPlayerCharacter::AMRPlayerCharacter()
@@ -75,6 +76,7 @@ void AMRPlayerCharacter::BeginPlay()
 	}
 
 	CachedGameState = Cast<AMRGameState>(UGameplayStatics::GetGameState(this));
+	GetWorld()->GetSubsystem<UMRUIManager>()->ToggleDebugWidget();
 }
 
 // Called every frame
