@@ -7,6 +7,7 @@
 #include "Character/MRPlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 
+class USceneComponent;
 
 // Sets default values
 AItemBaseActor::AItemBaseActor()
@@ -14,7 +15,9 @@ AItemBaseActor::AItemBaseActor()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
-
+	USceneComponent* RootScene = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComp"));
+	SetRootComponent(RootScene);
+  
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	SetRootComponent(MeshComp);
 
@@ -45,7 +48,7 @@ void AItemBaseActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor*
 	{
 		PlayerCharacter->ItemActivated(ItemType);
 		UE_LOG(LogTemp, Warning, TEXT("충돌된 아이템 타입: %d"), static_cast<int32>(ItemType));
-	
+
 	}
 }
 
