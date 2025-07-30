@@ -58,6 +58,7 @@ AMRPlayerCharacter::AMRPlayerCharacter()
 	GetCharacterMovement()->GravityScale = BASE_GRAVITY_SCALE;
 
 	// --- 추가 설정 및 초기화 ---
+	EffectComponent = CreateDefaultSubobject<UMRItemEffectManagerComponent>(TEXT("EffectComp"));
 }
 
 // Called when the game starts or when spawned

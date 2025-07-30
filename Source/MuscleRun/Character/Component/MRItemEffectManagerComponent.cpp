@@ -26,23 +26,36 @@ void UMRItemEffectManagerComponent::ApplyEffect(EItemEffectTypes ItemTypes)
 {
 	switch (ItemTypes)
 	{
-	case EItemEffectTypes::Score:
-	{
-		// 여기 기본 아이템의 효과를 적용합니다. GameMode의 Score를 올려주는 로직을 작성해보세요!
-		TempScore += 10;
-		UE_LOG(LogTemp, Log, TEXT("Score +10! 현재 점수: %d"), TempScore);
-		break;
-	}
+		case EItemEffectTypes::Score:
+		{
+			// 여기 기본 아이템의 효과를 적용합니다. GameMode의 Score를 올려주는 로직을 작성해보세요!
+			TempScore += 10;
+			UE_LOG(LogTemp, Log, TEXT("Score +10! 현재 점수: %d"), TempScore);
+			break;
+		}
 	
-	case EItemEffectTypes::Faster:
-	{
-		//float& Speed = Player->GetCharacterMovement()->MaxWalkSpeed;
-		//Speed += 300.f;
-		//UE_LOG(LogTemp, Log, TEXT("속도증가! 현재 속도: %.1f"), Speed);
-		break;
-	}
-		// 아이템을 추가할 때는 헤더에서 Enum을 수정하고 여기 추가!
+		case EItemEffectTypes::Faster:
+		{
+			ACharacter* PlayerCharacter = Cast<ACharacter>(GetOwner());
+			if (PlayerCharacter)
+			{
+			UCharacterMovementComponent* MoveComp = PlayerCharacter->GetCharacterMovement();
+			MoveComp->MaxWalkSpeed += 300.f;
+			UE_LOG(LogTemp, Log, TEXT("속도증가! 현재 속도: %.1f"), MoveComp->MaxWalkSpeed);
+			}
+			break;
+		}
+	
+		case  EItemEffectTypes::NoDie:
+		{
+			ACharacter* PlayerCharacter = Cast<ACharacter>(GetOwner());
+			if (PlayerCharacter)
+			{
+			
+			}
+			break;
+		}
 		default:
 		break;
-	}
+	}	
 }
