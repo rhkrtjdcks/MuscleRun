@@ -9,6 +9,7 @@
 #include "../Sys/GameState/MRGameState.h"
 #include "Component/MRHealthComponent.h"
 #include "Data/MRDataType.h"
+#include "UObject/NoExportTypes.h"
 #include "MRPlayerCharacter.generated.h"
 
 
@@ -43,6 +44,11 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetHealth(){ return HealthComp->RetHealth(); }
+
+	// 회전 타일을 만났을 때 강제 회전
+	void ExecuteForceTurn(const FTransform& PlaneOrigin, const ETrackDirection TileEndDirection);
+		// PlayerCharacterRef->ExecuteForceTurn(PlaneOrigin, CurrentGroup.ExitDirection);
+
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Player")
@@ -80,8 +86,18 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
 	ECharacterLane CurrentLane = ECharacterLane::Center;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane");
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
 	ECharacterLane TargetLane = ECharacterLane::Center;
+
+	// [수정] 시작/끝 위치를 완전한 FVector가 아닌, 측면 오프셋 값(float)만 저장
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
+	float LaneSwitchStartLateralOffset = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
+	float LaneSwitchEndLateralOffset = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
+	float FixedLaneOffset = 0.f;
 
 private:
 
@@ -105,9 +121,7 @@ private:
 	const float BASE_GRAVITY_SCALE = 2.f;
 
 
-	// [수정] 시작/끝 위치를 완전한 FVector가 아닌, 측면 오프셋 값(float)만 저장
-	float LaneSwitchStartLateralOffset = 0.0f;
-	float LaneSwitchEndLateralOffset = 0.0f;
+
 
 public:
 	// 오버래핑 이벤트 발생시 Obstacle에 의해 출력

@@ -37,8 +37,8 @@ private:
 
 	// --- 설정 변수들 ---
 
-	UPROPERTY(EditAnywhere, Category = "Tile Management|Config")
-	TSubclassOf<AMRTile> TileClass;
+	/*UPROPERTY(EditAnywhere, Category = "Tile Management|Config")
+	TSubclassOf<AMRTile> TileClass;*/
 
 	UPROPERTY(EditAnywhere, Category = "Tile Management|Config", meta = (ClampMin = "1"))
 	int32 NumInitialTiles = 10;
@@ -48,7 +48,7 @@ private:
 
 	// --- 타일 관련 ---
     // 디자이너가 블루프린트 에디터에서 지정할 타일 클래스들
-	UPROPERTY(EditDefaultsOnly, Category = "Tile Management|Tile Types")
+	UPROPERTY(EditAnywhere, Category = "Tile Management|Tile Types")
     TMap<ETileType, TSubclassOf<AMRTile>> TileClassMap;
 
 
