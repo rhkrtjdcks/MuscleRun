@@ -35,7 +35,10 @@ public:
 	// 다른 액터(특히 UI)들이 현재 게임 상태 정보를 읽어갈 수 있는 함수들입니다.
 
 	UFUNCTION(BlueprintPure, Category = "GameState")
-	int32 GetScore() const { return CurrentScore; }
+	int32 GetCurrentScore() const { return CurrentScore; }
+
+	UFUNCTION(BlueprintPure, Category = "GameState")
+	int32 GetHighScore() const { return HighScore; }
 
 	UFUNCTION(BlueprintPure, Category = "GameState")
 	float GetGameSpeedMultiplier() const { return GameSpeedMultiplier; }
@@ -50,6 +53,9 @@ public:
 	void SetGameSpeedMultiplier(float NewMultiplier);
 	void SetCurrentState(EMRGameState NewState);
 
+	void SaveHighScore();
+	void LoadHighScore();
+
 	// --- 델리게이트 변수들 (상태 및 점수 방송용) ---
 	
 	FOnGameScoreChanged OnScoreChanged;
@@ -62,6 +68,9 @@ private:
 	// 현재 점수
 	UPROPERTY(VisibleAnywhere, Category = "GameState")
 	int32 CurrentScore;
+
+	UPROPERTY(VisibleAnywhere, Category = "GameState")
+	int32 HighScore;
 
 	// 현재 게임 속도 배율
 	UPROPERTY(VisibleAnywhere, Category = "GameState")
