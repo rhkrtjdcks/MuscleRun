@@ -15,7 +15,8 @@ enum class EItemEffectTypes : uint8
 {
 	None,
 	Score,
-	Faster
+	Faster,
+	NoDie
 };
 
 UENUM(BlueprintType)
