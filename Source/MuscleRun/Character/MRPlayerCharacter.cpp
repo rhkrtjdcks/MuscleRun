@@ -14,7 +14,9 @@
 #include "Component/MRHealthComponent.h"
 #include <Sys/GameState/MRGameState.h>
 #include "Kismet/GameplayStatics.h"
-#include "../Sys/WidgetSubSystem/MRUIManager.h"
+#include "Sys/WidgetSubSystem/MRUIManager.h"
+#include "GameFramework/Character.h"
+#include "Components/CapsuleComponent.h"
 
 // Sets default values
 AMRPlayerCharacter::AMRPlayerCharacter()
@@ -67,6 +69,7 @@ void AMRPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// 기본 입력 초기화를 진행합니다.
 	if (APlayerController* PC = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
@@ -76,9 +79,14 @@ void AMRPlayerCharacter::BeginPlay()
 		}
 	}
 
+	// GameState를 가져오고 디버그 위젯을 켭니다.
 	CachedGameState = Cast<AMRGameState>(UGameplayStatics::GetGameState(this));
 	GetWorld()->GetSubsystem<UMRUIManager>()->ToggleDebugWidget();
 
+	// 캡슐 높이 저장
+	DefualtCapsuleHalfSize = GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
+
+	// 타일 매니저와의 종속관계로 인해, Tick()을 항상 타일 매니저 뒤로 실행합니다.
 	if (ATileManager* TileManager = Cast<ATileManager>(UGameplayStatics::GetActorOfClass(GetWorld(), ATileManager::StaticClass())))
 	{
 		// "나(캐릭터)의 Tick은, 반드시 TileManager의 Tick이 끝난 후에 실행되어야 한다"
@@ -92,6 +100,7 @@ void AMRPlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// 시간에 따른 난이도 곡선을 적용합니다.
 	if (CachedGameState)
 	{
 		double NewMultiplier = CachedGameState->GetGameSpeedMultiplier();
@@ -101,7 +110,21 @@ void AMRPlayerCharacter::Tick(float DeltaTime)
 		GetCharacterMovement()->JumpZVelocity = BASE_JUMP_VELOCITY * NewMultiplier;
 	}
 
-	// 1. 전진 이동: 현재 트랙 방향에 따라 올바른 방향으로 힘을 가한다.
+	// 슬라이딩 로직
+	/*
+	if (CurrentCharacterState = ECharacterState::Slide)
+	{
+		GetCharacterMovement()->GroundFriction = 0.f;
+		GetCharacterMovement()->Velocity *= 0.98f;
+	}
+	else
+	{
+		GetCharacterMovement()->GroundFriction = 8.f;
+	}
+	*/
+
+
+	// 방향을 정의하고, 현재 앞방향으로 이동합니다.
 	FVector ForwardDirection = FVector::ZeroVector;
 	switch (CurrentTrackDirection)
 	{
@@ -112,17 +135,18 @@ void AMRPlayerCharacter::Tick(float DeltaTime)
 	}
 	AddMovementInput(ForwardDirection, 1.0f);
 
-	// 2. 레인 변경 로직
+	// 레인을 변경하는 로직입니다. bIsSwitchingLane 참일때만 동작합니다.
 	if (bIsSwitchingLane)
 	{
 		LaneSwitchAlpha += DeltaTime / LaneSwitchDuration;
 		LaneSwitchAlpha = FMath::Min(LaneSwitchAlpha, 1.0f);
 
+		// 이동할 값을 시간에 따른 LaneSwitchAlpha에 따라 증가시키며 위치를 보정시킵니다.
 		const float NewLateralOffset = FMath::Lerp(LaneSwitchStartLateralOffset, LaneSwitchEndLateralOffset, LaneSwitchAlpha);
 
 		FVector NewLocation = GetActorLocation();
 
-		// [단순화] 현재 트랙 방향에 따라 X 또는 Y 좌표만 직접 수정한다.
+		// 현재 트랙 방향을 switch로 분기하여 고정 오프셋에 Lerp 값을 더합니다.
 		switch (CurrentTrackDirection)
 		{
 		case ETrackDirection::North:
@@ -141,7 +165,7 @@ void AMRPlayerCharacter::Tick(float DeltaTime)
 		UE_LOG(LogTemp, Log, TEXT("Movement Is Here, NewLateral : %.2f, Current Start Offset : %.2f, Current End Offset : %.2f"), NewLateralOffset, LaneSwitchStartLateralOffset, LaneSwitchEndLateralOffset);
 		SetActorLocation(NewLocation);
 
-		// 레인 변경 완료 처리
+		// 레인 변경 완료 시 넘었을지도 모르는 값을 보정해줍니다. (Min 함수 때문에 실행될 일은 매우 없습니다)
 		if (LaneSwitchAlpha >= 1.0f)
 		{
 			bIsSwitchingLane = false;
@@ -181,29 +205,45 @@ void AMRPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		Input->BindAction(IA_Right, ETriggerEvent::Triggered, this, &AMRPlayerCharacter::MoveRight);
 		Input->BindAction(IA_MTJump, ETriggerEvent::Started, this, &AMRPlayerCharacter::Jump);
 		Input->BindAction(IA_MTJump, ETriggerEvent::Completed, this, &AMRPlayerCharacter::StopJumping);
+		Input->BindAction(IA_Slide, ETriggerEvent::Triggered, this, &AMRPlayerCharacter::StartSlide);
+		Input->BindAction(IA_Slide, ETriggerEvent::Completed, this, &AMRPlayerCharacter::StopSlide);
 	}
 }
 
+// 점프를 오버라이드한 함수입니다. 점프 입력을 받고 버퍼링 시간을 잽니다.
 void AMRPlayerCharacter::Jump()
 {
-	Super::Jump();
+	if (CanJump())
+	{
+		Super::Jump();
+	}
+	else
+	{
+		bWantsToJump = true;
+		GetWorld()->GetTimerManager().SetTimer(JumpBufferTimerHandler, this, &AMRPlayerCharacter::ClearJumpBuffer, JumpBufferDuration, false);
+	}
 }
 
+// 땅에 닿았을 경우 호출합니다. 점프 버퍼링이 아직 Clear 되지 않았을 경우에 곧바로 다시 점프합니다.
 void AMRPlayerCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
+
+	if (bWantsToJump)
+	{
+		bWantsToJump = false;
+		Jump();
+	}
 }
 
-
+// 주의! 타일 매니저와의 종속 관계가 주어진 함수입니다. 수정이 정말 필요하다면 말해주세요.
 void AMRPlayerCharacter::ExecuteForceTurn(const FTransform& AlignmentTransform, ETrackDirection NewDirection)
 {
-	// 1. [유지] 논리적 레인을 중앙으로 강제 초기화한다.
-	//    이건 회전 후의 혼란을 막기 위해 여전히 유용하다.
+	// 회전 시의 중앙값을 가짐에 따라 Center로 상태를 강제 고정합니다.
 	CurrentLane = ECharacterLane::Center;
 	TargetLane = ECharacterLane::Center;
 
-	// 2. [수정] 캐릭터의 회전을 새로운 타일의 방향과 즉시 '일치'시킨다.
-	//    부드러운 회전은 나중에 추가하더라도, 일단은 바로 꺾어준다.
+	// 캐릭터의 방향을 즉시 회전 방향으로 옮깁니다.
 	const FRotator NewRotation = AlignmentTransform.GetRotation().Rotator();
 	SetActorRotation(NewRotation);
 	// 컨트롤러의 회전도 함께 맞춰주는 것이 좋다.
@@ -212,27 +252,24 @@ void AMRPlayerCharacter::ExecuteForceTurn(const FTransform& AlignmentTransform, 
 		PC->SetControlRotation(NewRotation);
 	}
 
-	// 3. [유지] 새로운 트랙 방향을 상태 변수에 저장한다.
+	// 트랙 방향도 마저 업데이트합니다.
 	CurrentTrackDirection = NewDirection;
 	FVector CurrentLocation = GetActorLocation();
 
-	// 1. 현재 캐릭터의 속도를 가져온다.
+	// 캐릭터의 속도 벡터와 방향 벡터를 가져와서 내적으로 밀려나는 현상을 방지합니다.
+	// 추후 부드러운 회전 로직 구현으로 대체합니다.
 	FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 
-	// 2. 새로운 트랙의 '앞'과 '오른쪽' 방향 벡터를 가져온다.
 	const FVector NewForwardVector = GetActorForwardVector();
 	const FVector NewRightVector = GetActorRightVector();
 
-	// 3. 현재 속도를 '새로운 앞 방향'에 투영하여 전진 속도 성분만 남긴다.
-	//    (옆으로 밀려나던 속도는 이 과정에서 제거된다)
 	FVector NewVelocity = FVector::DotProduct(CurrentVelocity, NewForwardVector) * NewForwardVector;
 
-	// 4. (선택) 중력으로 인한 수직 속도는 유지해주는 것이 좋다.
 	NewVelocity.Z = CurrentVelocity.Z;
 
-	// 5. 계산된 '깨끗한' 전진 속도를 캐릭터 무브먼트 컴포넌트에 다시 설정한다.
 	GetCharacterMovement()->Velocity = NewVelocity;
 
+	// 고정 좌측 오프셋 값을 갱신합니다.
 	switch (NewDirection)
 	{
 	case ETrackDirection::North:
@@ -247,6 +284,7 @@ void AMRPlayerCharacter::ExecuteForceTurn(const FTransform& AlignmentTransform, 
 		break;
 	}
 
+	// 이동 오프셋 값은 초기화해서 이동 정보를 초기화합니다. (강제 중앙 정렬)
 	LaneSwitchEndLateralOffset = 0;
 	LaneSwitchStartLateralOffset = 0;
 
@@ -256,7 +294,7 @@ void AMRPlayerCharacter::OnInputJump(const FInputActionValue& Value)
 {
 	if (Value.Get<bool>())
 	{
-		Super::Jump();
+		Jump();
 	}
 	else
 	{
@@ -264,6 +302,7 @@ void AMRPlayerCharacter::OnInputJump(const FInputActionValue& Value)
 	}
 }
 
+// 왼쪽 이동 함수입니다. 요청의 책임만 가지고 있습니다.
 void AMRPlayerCharacter::MoveLeft()
 {
 	if (bIsSwitchingLane) return;
@@ -275,6 +314,7 @@ void AMRPlayerCharacter::MoveLeft()
 	}
 }
 
+// 오른쪽 이동 함수입니다. 요청의 책임만 가지고 있습니다.
 void AMRPlayerCharacter::MoveRight()
 {
 	if (bIsSwitchingLane) return;
@@ -286,6 +326,7 @@ void AMRPlayerCharacter::MoveRight()
 	}
 }
 
+// 상태를 바꿔 Tick()이 이동 로직을 실행하도록 하는 함수입니다. TargetLane을 바꾸는 작업도 겸합니다.
 void AMRPlayerCharacter::StartLaneSwitch()
 {
 	bIsSwitchingLane = true;
@@ -297,6 +338,36 @@ void AMRPlayerCharacter::StartLaneSwitch()
 
 	const int32 LogicalLaneIndex = static_cast<int32>(TargetLane) - 1; // 0,1,2 -> -1,0,1
 	LaneSwitchEndLateralOffset = LogicalLaneIndex * LaneWidth;
+}
+
+// 슬라이딩을 시작하는 함수입니다. 키를 떼거나, 시간이 지났을 때 자동으로 StopSlide()를 호출합니다.
+void AMRPlayerCharacter::StartSlide()
+{
+	if (GetCharacterMovement()->IsFalling())
+		return;
+
+	// CurrentCharacterState = ECharacterState::Slide;
+
+	GetCapsuleComponent()->SetCapsuleHalfHeight(DefualtCapsuleHalfSize / 2.f);
+
+	// PlayAnimMontage(...)
+
+	GetWorld()->GetTimerManager().SetTimer(SlideTimeHandler, this, &AMRPlayerCharacter::StopSlide, SlideDuration, false);
+}
+
+void AMRPlayerCharacter::StopSlide()
+{
+	GetCapsuleComponent()->SetCapsuleHalfHeight(DefualtCapsuleHalfSize);
+
+	//StopAnimMontage(...);
+
+	GetWorld()->GetTimerManager().ClearTimer(SlideTimeHandler);
+}
+
+// 점프 버퍼링을 끝내는 함수입니다.
+void AMRPlayerCharacter::ClearJumpBuffer()
+{
+	bWantsToJump = false;
 }
 
 void AMRPlayerCharacter::GetDamaged(float DamageAmount)

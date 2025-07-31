@@ -1,16 +1,9 @@
-// -----------------------------------------------------------------------------
-// AMRTile.h - ���� ������
-// -----------------------------------------------------------------------------
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "MRTile.generated.h"
 
-/**
- * @brief ��ֹ� ���� ������ ��� ����ü�Դϴ�.
- * ��Ÿ�ӿ� ���� ���͸� �����ϱ� ���� ������ �����Ϳ��� �̸����⸦ ���� �޽� ������ �����ϴ�.
- */
 USTRUCT(BlueprintType)
 struct FMRObstacleSpawnInfo
 {
@@ -19,11 +12,11 @@ struct FMRObstacleSpawnInfo
 	UPROPERTY(VisibleAnywhere, Category = "Tile")
 	FGuid ObjectID;
 
-	// ��Ÿ�ӿ� ������ ���� ��ֹ� ���� Ŭ���� (��: BP_SpikeObstacle)
+	// 스폰할 액터들의 정보가 담긴 DA를 여기 지정합니다.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
 	TSubclassOf<AActor> ActorClassToSpawn;
 
-	// �����Ϳ����� ���� �̸������ ����ƽ �޽�
+	// 미리보기 메쉬입니다. (주의 : 현재 미리보기가 사라지지 않고 적용되고 있습니다. 지형을 꾸밀 때 사용하면 됩니다.)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
 	TObjectPtr<class UStaticMesh> PreviewMesh;
 
@@ -39,10 +32,6 @@ struct FMRObstacleSpawnInfo
 	}
 };
 
-/**
- * @brief ��Ŀ� ��ǰ(Prop) ��ġ ������ ��� ����ü�Դϴ�.
- * �����÷��� ���� ���� ������ ����ϴ� ����ƽ �޽� ������Ʈ�� �����ϴ� �� ���˴ϴ�.
- */
 USTRUCT(BlueprintType)
 struct FMRPropInfo
 {
@@ -66,12 +55,8 @@ struct FMRPropInfo
 	}
 };
 
-/**
- * @class AMRTile
- * @brief ���� ���� ������ �⺻ Ÿ�� �����Դϴ�.
- * �����Ϳ����� ��ֹ��� ��ǰ�� ��ġ�� �ð������� �����ϰ�,
- * ��Ÿ�ӿ����� ATileManager���� ��ֹ� ���� ������ �����ϴ� ������ �մϴ�.
- */
+
+// EndArrowComponent 만 중요합니다. 나머지는 구버전 속성들이므로 신경쓰지 마세요.
 UCLASS()
 class MUSCLERUN_API AMRTile : public AActor
 {
@@ -80,10 +65,6 @@ class MUSCLERUN_API AMRTile : public AActor
 public:	
 	AMRTile();
 
-	/**
-	 * @brief ATileManager�� �� Ÿ�� ���� �����ؾ� �� ��ֹ� ������ �������ϴ�.
-	 * @return ��ֹ� ���� ���� �迭�� ��� ����
-	 */
 	const TArray<FMRObstacleSpawnInfo>& GetObstacleSpawnData() const { return ObstacleArray; }
 
 	/**

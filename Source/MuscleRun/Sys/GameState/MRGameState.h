@@ -80,6 +80,4 @@ private:
 	// 현재 게임의 상태 (시작 대기, 진행 중, 게임 오버 등)
 	UPROPERTY(VisibleAnywhere, Category = "GameState")
 	EMRGameState CurrentState;
-
-	
 };

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -33,85 +33,113 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	// ÄÚ¿äÅ× Å¸ÀÓÀ» À§ÇØ Jump ÇÔ¼ö¸¦ ¿À¹ö¶óÀÌµåÇÕ´Ï´Ù.
+	// ì½”ìš”í…Œ íƒ€ì„ì„ ìœ„í•´ Jump í•¨ìˆ˜ë¥¼ ì˜¤ë²„ë¼ì´ë“œí•©ë‹ˆë‹¤.
 	virtual void Jump() override;
 	
-	// Á¡ÇÁ ¹öÆÛ¸µ µîÀÇ Á¶ÀÛ°¨ °³¼± ·ÎÁ÷À» À§ÇØ Landed ÇÔ¼ö¸¦ ¿À¹ö¶óÀÌµåÇÕ´Ï´Ù.
+	// ì í”„ ë²„í¼ë§ ë“±ì˜ ì¡°ì‘ê° ê°œì„  ë¡œì§ì„ ìœ„í•´ Landed í•¨ìˆ˜ë¥¼ ì˜¤ë²„ë¼ì´ë“œí•©ë‹ˆë‹¤.
 	virtual void Landed(const FHitResult& Hit) override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lanes")
+	// í˜„ì¬ ì¶”ì í•˜ê³  ìˆëŠ” ë°©í–¥ì…ë‹ˆë‹¤. ì´ë™ ë¡œì§ì—ì„œ ì‚¬ìš©í•©ë‹ˆë‹¤.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Movement|Lanes")
 	ETrackDirection CurrentTrackDirection = ETrackDirection::North;
 
+	// í˜„ì¬ ì²´ë ¥ì„ ë°˜í™˜í•˜ëŠ” Public API í•¨ìˆ˜ì…ë‹ˆë‹¤.
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetHealth(){ return HealthComp->RetHealth(); }
 
-	// È¸Àü Å¸ÀÏÀ» ¸¸³µÀ» ¶§ °­Á¦ È¸Àü
+	// íšŒì „ íƒ€ì¼ì„ ë§Œë‚¬ì„ ë•Œ ê°•ì œ íšŒì „
 	void ExecuteForceTurn(const FTransform& PlaneOrigin, const ETrackDirection TileEndDirection);
-		// PlayerCharacterRef->ExecuteForceTurn(PlaneOrigin, CurrentGroup.ExitDirection);
 
+	// ì˜¤ë²„ë˜í•‘ ì´ë²¤íŠ¸ ë°œìƒì‹œ Obstacleì— ì˜í•´ ì¶œë ¥
+	void GetDamaged(float DamageAmount);
+
+	// ì˜¤ë²„ë˜í•‘ ì´ë²¤íŠ¸ ë°œìƒì‹œ Itemì— ì˜í•´ ì¶œë ¥
+	void ItemActivated(EItemEffectTypes ItemTypes);
 
 protected:
-	UPROPERTY(VisibleAnywhere, Category = "Player")
+	// --- ì»´í¬ë„ŒíŠ¸ ê´€ë ¨ ---
+
+	UPROPERTY(VisibleAnywhere, Category = "Player|Comps")
 	class UBoxComponent* TriggerVolume;
 
-	UPROPERTY(VisibleAnywhere, Category = "Player")
+	UPROPERTY(VisibleAnywhere, Category = "Player|Comps")
 	class USpringArmComponent* SpringArm;
 
-	UPROPERTY(EditAnywhere, Category ="Player")
+	UPROPERTY(EditAnywhere, Category ="Player|Comps")
 	class UCameraComponent* Camera;
 
-	UPROPERTY(EditAnywhere, Category = "Player")
-	class UInputMappingContext* IMC_MRPlayerInput;
-
-	UPROPERTY(EditAnywhere, Category = "Player")
-	class UInputAction* IA_Left;
-
-	UPROPERTY(EditAnywhere, Category = "Player")
-	class UInputAction* IA_Right;
-
-	UPROPERTY(EditAnywhere, Category = "Player")
-	class UInputAction* IA_MTJump;
-
-	UPROPERTY(VisibleAnywhere, Category = "Player")
+	UPROPERTY(VisibleAnywhere, Category = "Player|Comps")
 	class UMRHealthComponent* HealthComp;
 
-	UPROPERTY(VisibleAnywhere, Category = "Player")
+	UPROPERTY(VisibleAnywhere, Category = "Player|Comps")
 	class UMRItemEffectManagerComponent* EffectComponent;
+
+
+	// --- ì…ë ¥ ë§¤í•‘ ê´€ë ¨ ---
+
+	UPROPERTY(EditAnywhere, Category = "Player|Input")
+	class UInputMappingContext* IMC_MRPlayerInput;
+
+	UPROPERTY(EditAnywhere, Category = "Player|Input")
+	class UInputAction* IA_Left;
+
+	UPROPERTY(EditAnywhere, Category = "Player|Input")
+	class UInputAction* IA_Right;
+
+	UPROPERTY(EditAnywhere, Category = "Player|Input")
+	class UInputAction* IA_MTJump;
+
+	UPROPERTY(EditAnywhere, Category = "Player|Input")
+	class UInputAction* IA_Slide;
+
+	UPROPERTY(EditAnywhere, Category = "Player|Input")
+	class UInputAction* IA_ToggleWidget;
+
+	UPROPERTY(EditAnywhere, Category = "Player|Input")
+	class UInputAction* IA_Escape;
+
+	// --- ë…¼ë¦¬ì  ë ˆì¸ ê¸°ë°˜ ì´ë™ ê´€ë ¨ í•¨ìˆ˜ ë° ë³€ìˆ˜ ---
+
+	void MoveLeft();
+
+	void MoveRight();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Movement|Lane")
+	ECharacterLane CurrentLane = ECharacterLane::Center;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Movement|Lane")
+	ECharacterLane TargetLane = ECharacterLane::Center;
+
+	// [ìˆ˜ì •] ì‹œì‘/ë ìœ„ì¹˜ë¥¼ ì™„ì „í•œ FVectorê°€ ì•„ë‹Œ, ì¸¡ë©´ ì˜¤í”„ì…‹ ê°’(float)ë§Œ ì €ì¥
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Movement|Lane")
+	float LaneSwitchStartLateralOffset = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Movement|Lane")
+	float LaneSwitchEndLateralOffset = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Movement|Lane")
+	float FixedLaneOffset = 0.f;
+
 
 	void OnInputJump(const FInputActionValue& Value);
 
-	void MoveLeft();
-	void MoveRight();
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
-	ECharacterLane CurrentLane = ECharacterLane::Center;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
-	ECharacterLane TargetLane = ECharacterLane::Center;
-
-	// [¼öÁ¤] ½ÃÀÛ/³¡ À§Ä¡¸¦ ¿ÏÀüÇÑ FVector°¡ ¾Æ´Ñ, Ãø¸é ¿ÀÇÁ¼Â °ª(float)¸¸ ÀúÀå
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
-	float LaneSwitchStartLateralOffset = 0.0f;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
-	float LaneSwitchEndLateralOffset = 0.0f;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
-	float FixedLaneOffset = 0.f;
-
 private:
+	
 
-	void StartLaneSwitch();
-
-	UPROPERTY(EditAnywhere, Category = "Movement|Lanes")
-	float LaneWidth = 150.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Movement|Lanes")
-	float LaneSwitchDuration = 0.2f;
-
+	// ê²Œì„ ë‚œì´ë„ ê°’ì„ ë°›ì•„ì˜¤ê¸° ìœ„í•œ MRGameStateì˜ í¬ì¸í„°ì…ë‹ˆë‹¤.
 	UPROPERTY()
     TObjectPtr<AMRGameState> CachedGameState;
 
+
+	// --- ì´ë™ ë¡œì§ ê´€ë ¨ ì„¤ì •ê°’ë“¤ì…ë‹ˆë‹¤ ---
+	
+	void StartLaneSwitch();
+
+	UPROPERTY(EditAnywhere, Category = "Player|Movement|Lanes")
+	float LaneWidth = 150.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Player|Movement|Lanes")
+	float LaneSwitchDuration = 0.2f;
 
 	bool bIsSwitchingLane = false;
 	float LaneSwitchAlpha = 0.0f;
@@ -121,11 +149,28 @@ private:
 	const float BASE_GRAVITY_SCALE = 2.f;
 
 
+	// --- ìŠ¬ë¼ì´ë”© ê¸°ëŠ¥ êµ¬í˜„ í•¨ìˆ˜ --
 
+	void StartSlide();
+	void StopSlide();
 
-public:
-	// ¿À¹ö·¡ÇÎ ÀÌº¥Æ® ¹ß»ı½Ã Obstacle¿¡ ÀÇÇØ Ãâ·Â
-	void GetDamaged(float DamageAmount);
-	// ¿À¹ö·¡ÇÎ ÀÌº¥Æ® ¹ß»ı½Ã Item¿¡ ÀÇÇØ Ãâ·Â
-	void ItemActivated(EItemEffectTypes ItemTypes);
+	FTimerHandle SlideTimeHandler;
+
+	UPROPERTY()
+	float DefualtCapsuleHalfSize;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player|Movement|Slide")
+	float SlideDuration = 2.f;
+
+	// --- ì í”„ ë²„í¼ë§ ê´€ë ¨ ---
+
+	FTimerHandle JumpBufferTimerHandler;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Movement|Jump", meta = (AllowPrivateAccess = "true"))
+	bool bWantsToJump = false;
+
+	void ClearJumpBuffer();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player|Movement|Jump", meta = (AllowPrivateAccess = "true"))
+	float JumpBufferDuration = 0.4f;
 };

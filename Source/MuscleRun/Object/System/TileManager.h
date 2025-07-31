@@ -1,7 +1,4 @@
-// -----------------------------------------------------------------------------
-// ATileManager.h
-// -----------------------------------------------------------------------------
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -9,11 +6,11 @@
 #include "TileManager.generated.h"
 
 class AMRTile;
-class USpawnLocationComponent; // [¼öÁ¤] ÀÌ¸§ º¯°æ ¹İ¿µ
+class USpawnLocationComponent; // [ìˆ˜ì •] ì´ë¦„ ë³€ê²½ ë°˜ì˜
 
 /**
  * @class ATileManager
- * @brief ¹«ÇÑ ·¯³Ê °ÔÀÓÀÇ Å¸ÀÏ »ı¼º, ÆÄ±« ¹× Èå¸§À» ÃÑ°ıÇÏ´Â Áß¾Ó °ü¸®ÀÚ Å¬·¡½ºÀÔ´Ï´Ù.
+ * @brief ë¬´í•œ ëŸ¬ë„ˆ ê²Œì„ì˜ íƒ€ì¼ ìƒì„±, íŒŒê´´ ë° íë¦„ì„ ì´ê´„í•˜ëŠ” ì¤‘ì•™ ê´€ë¦¬ì í´ë˜ìŠ¤ì…ë‹ˆë‹¤.
  */
 UCLASS()
 class ATileManager : public AActor
@@ -35,10 +32,7 @@ private:
 	void DestroyOldestTileGroup();
 	void SpawnObjectsOnTile(AMRTile* TargetTile, TArray<TObjectPtr<AActor>>& OutSpawnedActors);
 
-	// --- ¼³Á¤ º¯¼öµé ---
-
-	/*UPROPERTY(EditAnywhere, Category = "Tile Management|Config")
-	TSubclassOf<AMRTile> TileClass;*/
+	// --- ì„¤ì • ë³€ìˆ˜ë“¤ ---
 
 	UPROPERTY(EditAnywhere, Category = "Tile Management|Config", meta = (ClampMin = "1"))
 	int32 NumInitialTiles = 10;
@@ -46,18 +40,17 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Tile Management|Config", meta = (ClampMin = "1"))
 	int32 MinActiveTiles = 8;
 
-	// --- Å¸ÀÏ °ü·Ã ---
-    // µğÀÚÀÌ³Ê°¡ ºí·çÇÁ¸°Æ® ¿¡µğÅÍ¿¡¼­ ÁöÁ¤ÇÒ Å¸ÀÏ Å¬·¡½ºµé
+	// --- íƒ€ì¼ ê´€ë ¨ ---
+    // ë””ìì´ë„ˆê°€ ë¸”ë£¨í”„ë¦°íŠ¸ ì—ë””í„°ì—ì„œ ì§€ì •í•  íƒ€ì¼ í´ë˜ìŠ¤ë“¤
 	UPROPERTY(EditAnywhere, Category = "Tile Management|Tile Types")
     TMap<ETileType, TSubclassOf<AMRTile>> TileClassMap;
 
 
-	// --- »óÅÂ º¯¼öµé ---
+	// --- ìƒíƒœ ë³€ìˆ˜ë“¤ ---
 
 	UPROPERTY()
 	TObjectPtr<ACharacter> PlayerCharacter;
 
-	// [¼öÁ¤] TQueue ´ë½Å TArray¸¦ »ç¿ëÇÏ¿© È°¼ºÈ­µÈ Å¸ÀÏ ±×·ìµéÀ» °ü¸®ÇÕ´Ï´Ù.
 	TArray<FTileGroup> ActiveTileGroups;
 
 	UPROPERTY()
@@ -66,7 +59,6 @@ private:
 	UPROPERTY()
 	TObjectPtr<AMRTile> CurrentTrackingTile;
 
-	// [¼öÁ¤] ÇöÀç ÃßÀû ÁßÀÎ Å¸ÀÏÀÇ ÀÎµ¦½º¸¦ °ü¸®. TArray¿Í ÇÔ²² »ç¿ëÇÏ¸é ¸Å¿ì È¿À²ÀûÀÔ´Ï´Ù.
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	int32 CurrentTrackingTileIndex = 0;
 
