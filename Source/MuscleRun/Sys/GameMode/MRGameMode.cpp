@@ -1,5 +1,6 @@
 #include "Sys/GameMode/MRGameMode.h"
 #include "Sys/GameState/MRGameState.h"
+#include "Public/Save/MRSaveManager.h"
 #include "GameFramework/Character.h" // 예시를 위해 포함
 #include "Kismet/GameplayStatics.h"
 
@@ -35,6 +36,7 @@ void AMRGameMode::PlayerDied()
 {
 	UE_LOG(LogTemp, Log, TEXT("Player has died. Ending game."));
 	EndGame();
+
 }
 
 void AMRGameMode::StartGame()
@@ -66,6 +68,16 @@ void AMRGameMode::EndGame()
 		GetWorld()->GetTimerManager().ClearTimer(IncreaseDifficultyTimerHandle);
 
 		// TODO: 게임 오버 UI를 띄우거나, 플레이어 입력을 막는 등의 로직을 처리합니다.
+		
+		UMRSaveManager* SaveManager = GetGameInstance()->GetSubsystem<UMRSaveManager>();
+		if (SaveManager)
+		{
+			// 최고 점수 갱신 시에만 저장
+			if (SaveManager->UpdateHighScore(GS->GetCurrentScore()))
+			{
+				SaveManager->SaveGame();
+			}
+		}
 	}
 }
 

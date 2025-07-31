@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Character/MRPlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
 
 class USceneComponent;
 
@@ -89,7 +90,12 @@ void AItemBaseActor::PlayVanishEffect()
 
 	if (VanishEffect)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(this, VanishEffect, GetActorLocation());
+		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(
+			this, VanishEffect, GetActorLocation());
+		if (PSC)
+		{
+			PSC->bAutoDestroy = true;  // 파티클 끝나면 자동으로 씬에서 제거됨
+		}
 	}
 }
 
