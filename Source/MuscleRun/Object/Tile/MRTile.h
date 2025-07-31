@@ -96,6 +96,14 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void OnConstruction(const FTransform& Transform) override;
 
+	// ��ֹ� ���� ���� �迭. ��Ÿ�ӿ� ���� ���ͷ� �����˴ϴ�.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MRTile|Spawn Data", meta = (TitleProperty = "ActorClassToSpawn"))
+	TArray<FMRObstacleSpawnInfo> ObstacleArray;
+
+	// ��Ŀ� ��ǰ ���� �迭. ����ƽ �޽� ������Ʈ�� Ÿ�Ͽ� ���� �ٽ��ϴ�.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MRTile|Spawn Data", meta = (TitleProperty = "StaticMesh"))
+	TArray<FMRPropInfo> PropArray;
+
 private:
 	// �����Ϳ��� ������ ������ ��ֹ� ��ġ�� �����Ϳ� �����ϴ� ��ư �Լ�
 	UFUNCTION(CallInEditor, Category = "MRTile|Actions")
@@ -131,13 +139,4 @@ private:
 	
 	// PropArray�� �����͸� ������� Ÿ�Ͽ� �ٴ� ���� ��� ������Ʈ�� ������Ʈ�մϴ�.
 	void UpdatePropComponents();
-
-protected:
-	// ��ֹ� ���� ���� �迭. ��Ÿ�ӿ� ���� ���ͷ� �����˴ϴ�.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MRTile|Spawn Data", meta = (TitleProperty = "ActorClassToSpawn"))
-	TArray<FMRObstacleSpawnInfo> ObstacleArray;
-
-	// ��Ŀ� ��ǰ ���� �迭. ����ƽ �޽� ������Ʈ�� Ÿ�Ͽ� ���� �ٽ��ϴ�.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MRTile|Spawn Data", meta = (TitleProperty = "StaticMesh"))
-	TArray<FMRPropInfo> PropArray;
 };

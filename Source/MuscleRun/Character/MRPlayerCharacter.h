@@ -1,4 +1,4 @@
-	// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -7,24 +7,11 @@
 #include "Character/Component/MRItemEffectManagerComponent.h"
 #include "InputActionValue.h"
 #include "../Sys/GameState/MRGameState.h"
+#include "Component/MRHealthComponent.h"
+#include "Data/MRDataType.h"
+#include "UObject/NoExportTypes.h"
 #include "MRPlayerCharacter.generated.h"
 
-UENUM(BlueprintType)
-enum class ETrackDirection : uint8
-{
-	North, // +X 축으로 전진
-	East,  // +Y 축으로 전진
-	South, // -X 축으로 전진
-	West   // -Y 축으로 전진
-};
-
-UENUM(BlueprintType)
-enum class ECharacterLane : uint8
-{
-	Left = 0,
-	Center,
-	Right
-};
 
 UCLASS()
 class MUSCLERUN_API AMRPlayerCharacter : public ACharacter
@@ -54,6 +41,14 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lanes")
 	ETrackDirection CurrentTrackDirection = ETrackDirection::North;
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE float GetHealth(){ return HealthComp->RetHealth(); }
+
+	// 회전 타일을 만났을 때 강제 회전
+	void ExecuteForceTurn(const FTransform& PlaneOrigin, const ETrackDirection TileEndDirection);
+		// PlayerCharacterRef->ExecuteForceTurn(PlaneOrigin, CurrentGroup.ExitDirection);
+
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Player")
@@ -88,6 +83,22 @@ protected:
 	void MoveLeft();
 	void MoveRight();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
+	ECharacterLane CurrentLane = ECharacterLane::Center;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
+	ECharacterLane TargetLane = ECharacterLane::Center;
+
+	// [수정] 시작/끝 위치를 완전한 FVector가 아닌, 측면 오프셋 값(float)만 저장
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
+	float LaneSwitchStartLateralOffset = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
+	float LaneSwitchEndLateralOffset = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement|Lane")
+	float FixedLaneOffset = 0.f;
+
 private:
 
 	void StartLaneSwitch();
@@ -101,8 +112,7 @@ private:
 	UPROPERTY()
     TObjectPtr<AMRGameState> CachedGameState;
 
-	ECharacterLane CurrentLane = ECharacterLane::Center;
-	ECharacterLane TargetLane = ECharacterLane::Center;
+
 	bool bIsSwitchingLane = false;
 	float LaneSwitchAlpha = 0.0f;
 
@@ -111,9 +121,7 @@ private:
 	const float BASE_GRAVITY_SCALE = 2.f;
 
 
-	// [수정] 시작/끝 위치를 완전한 FVector가 아닌, 측면 오프셋 값(float)만 저장
-	float LaneSwitchStartLateralOffset = 0.0f;
-	float LaneSwitchEndLateralOffset = 0.0f;
+
 
 public:
 	// 오버래핑 이벤트 발생시 Obstacle에 의해 출력

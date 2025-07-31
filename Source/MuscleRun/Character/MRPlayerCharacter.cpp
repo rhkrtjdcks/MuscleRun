@@ -14,6 +14,7 @@
 #include "Component/MRHealthComponent.h"
 #include <Sys/GameState/MRGameState.h>
 #include "Kismet/GameplayStatics.h"
+#include "../Sys/WidgetSubSystem/MRUIManager.h"
 
 // Sets default values
 AMRPlayerCharacter::AMRPlayerCharacter()
@@ -76,6 +77,14 @@ void AMRPlayerCharacter::BeginPlay()
 	}
 
 	CachedGameState = Cast<AMRGameState>(UGameplayStatics::GetGameState(this));
+	GetWorld()->GetSubsystem<UMRUIManager>()->ToggleDebugWidget();
+
+	if (ATileManager* TileManager = Cast<ATileManager>(UGameplayStatics::GetActorOfClass(GetWorld(), ATileManager::StaticClass())))
+	{
+		// "나(캐릭터)의 Tick은, 반드시 TileManager의 Tick이 끝난 후에 실행되어야 한다"
+		// 라고 엔진에게 명시적으로 알려줍니다.
+		AddTickPrerequisiteActor(TileManager);
+	}
 }
 
 // Called every frame
@@ -88,8 +97,8 @@ void AMRPlayerCharacter::Tick(float DeltaTime)
 		double NewMultiplier = CachedGameState->GetGameSpeedMultiplier();
 
 		GetCharacterMovement()->MaxWalkSpeed = BASE_SPEED_MAX * NewMultiplier;
-		GetCharacterMovement()->GravityScale = BASE_GRAVITY_SCALE * NewMultiplier;
-		GetCharacterMovement()->JumpZVelocity = BASE_JUMP_VELOCITY * NewMultiplier * NewMultiplier;
+		GetCharacterMovement()->GravityScale = BASE_GRAVITY_SCALE * NewMultiplier * NewMultiplier;
+		GetCharacterMovement()->JumpZVelocity = BASE_JUMP_VELOCITY * NewMultiplier;
 	}
 
 	// 1. 전진 이동: 현재 트랙 방향에 따라 올바른 방향으로 힘을 가한다.
@@ -117,14 +126,19 @@ void AMRPlayerCharacter::Tick(float DeltaTime)
 		switch (CurrentTrackDirection)
 		{
 		case ETrackDirection::North:
+			NewLocation.Y = FixedLaneOffset + NewLateralOffset;
+			break;
 		case ETrackDirection::South:
-			NewLocation.Y = NewLateralOffset;
+			NewLocation.Y = FixedLaneOffset - NewLateralOffset;
 			break;
 		case ETrackDirection::East:
+			NewLocation.X = FixedLaneOffset - NewLateralOffset;
+			break;
 		case ETrackDirection::West:
-			NewLocation.X = NewLateralOffset;
+			NewLocation.X = FixedLaneOffset + NewLateralOffset;
 			break;
 		}
+		UE_LOG(LogTemp, Log, TEXT("Movement Is Here, NewLateral : %.2f, Current Start Offset : %.2f, Current End Offset : %.2f"), NewLateralOffset, LaneSwitchStartLateralOffset, LaneSwitchEndLateralOffset);
 		SetActorLocation(NewLocation);
 
 		// 레인 변경 완료 처리
@@ -135,15 +149,20 @@ void AMRPlayerCharacter::Tick(float DeltaTime)
 
 			// 최종 위치 보정
 			NewLocation = GetActorLocation();
+
 			switch (CurrentTrackDirection)
 			{
 			case ETrackDirection::North:
+				NewLocation.Y = FixedLaneOffset + LaneSwitchEndLateralOffset;
+				break;
 			case ETrackDirection::South:
-				NewLocation.Y = LaneSwitchEndLateralOffset;
+				NewLocation.Y = FixedLaneOffset - LaneSwitchEndLateralOffset;
 				break;
 			case ETrackDirection::East:
+				NewLocation.X = FixedLaneOffset - LaneSwitchEndLateralOffset;
+				break;
 			case ETrackDirection::West:
-				NewLocation.X = LaneSwitchEndLateralOffset;
+				NewLocation.X = FixedLaneOffset + LaneSwitchEndLateralOffset;
 				break;
 			}
 			SetActorLocation(NewLocation);
@@ -176,6 +195,63 @@ void AMRPlayerCharacter::Landed(const FHitResult& Hit)
 }
 
 
+void AMRPlayerCharacter::ExecuteForceTurn(const FTransform& AlignmentTransform, ETrackDirection NewDirection)
+{
+	// 1. [유지] 논리적 레인을 중앙으로 강제 초기화한다.
+	//    이건 회전 후의 혼란을 막기 위해 여전히 유용하다.
+	CurrentLane = ECharacterLane::Center;
+	TargetLane = ECharacterLane::Center;
+
+	// 2. [수정] 캐릭터의 회전을 새로운 타일의 방향과 즉시 '일치'시킨다.
+	//    부드러운 회전은 나중에 추가하더라도, 일단은 바로 꺾어준다.
+	const FRotator NewRotation = AlignmentTransform.GetRotation().Rotator();
+	SetActorRotation(NewRotation);
+	// 컨트롤러의 회전도 함께 맞춰주는 것이 좋다.
+	if (AController* PC = GetController())
+	{
+		PC->SetControlRotation(NewRotation);
+	}
+
+	// 3. [유지] 새로운 트랙 방향을 상태 변수에 저장한다.
+	CurrentTrackDirection = NewDirection;
+	FVector CurrentLocation = GetActorLocation();
+
+	// 1. 현재 캐릭터의 속도를 가져온다.
+	FVector CurrentVelocity = GetCharacterMovement()->Velocity;
+
+	// 2. 새로운 트랙의 '앞'과 '오른쪽' 방향 벡터를 가져온다.
+	const FVector NewForwardVector = GetActorForwardVector();
+	const FVector NewRightVector = GetActorRightVector();
+
+	// 3. 현재 속도를 '새로운 앞 방향'에 투영하여 전진 속도 성분만 남긴다.
+	//    (옆으로 밀려나던 속도는 이 과정에서 제거된다)
+	FVector NewVelocity = FVector::DotProduct(CurrentVelocity, NewForwardVector) * NewForwardVector;
+
+	// 4. (선택) 중력으로 인한 수직 속도는 유지해주는 것이 좋다.
+	NewVelocity.Z = CurrentVelocity.Z;
+
+	// 5. 계산된 '깨끗한' 전진 속도를 캐릭터 무브먼트 컴포넌트에 다시 설정한다.
+	GetCharacterMovement()->Velocity = NewVelocity;
+
+	switch (NewDirection)
+	{
+	case ETrackDirection::North:
+	case ETrackDirection::South:
+		FixedLaneOffset = CurrentLocation.Y;
+		break;
+	case ETrackDirection::West:
+	case ETrackDirection::East:
+		FixedLaneOffset = CurrentLocation.X;
+		break;
+	default:
+		break;
+	}
+
+	LaneSwitchEndLateralOffset = 0;
+	LaneSwitchStartLateralOffset = 0;
+
+	UE_LOG(LogTemp, Log, TEXT("Control Axis Rotated. New direction: %s"), *UEnum::GetValueAsString(NewDirection));
+}
 void AMRPlayerCharacter::OnInputJump(const FInputActionValue& Value)
 {
 	if (Value.Get<bool>())
@@ -217,18 +293,7 @@ void AMRPlayerCharacter::StartLaneSwitch()
 
 	const FVector CurrentLocation = GetActorLocation();
 
-	// [단순화] 현재 트랙 방향에 따라 어떤 축(X 또는 Y)을 측면 축으로 사용할지 결정
-	switch (CurrentTrackDirection)
-	{
-	case ETrackDirection::North:
-	case ETrackDirection::South:
-		LaneSwitchStartLateralOffset = CurrentLocation.Y;
-		break;
-	case ETrackDirection::East:
-	case ETrackDirection::West:
-		LaneSwitchStartLateralOffset = CurrentLocation.X;
-		break;
-	}
+	LaneSwitchStartLateralOffset = LaneSwitchEndLateralOffset;
 
 	const int32 LogicalLaneIndex = static_cast<int32>(TargetLane) - 1; // 0,1,2 -> -1,0,1
 	LaneSwitchEndLateralOffset = LogicalLaneIndex * LaneWidth;

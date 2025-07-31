@@ -4,6 +4,8 @@
 #include "GameFramework/Character.h"
 #include "Object/Tile/DataAsset/DA_SpawnableObjects.h"
 #include "Kismet/GameplayStatics.h"
+#include "Sys/GameState/MRGameState.h"
+#include "Character/MRPlayerCharacter.h"
 
 ATileManager::ATileManager()
 {
@@ -34,6 +36,11 @@ void ATileManager::BeginPlay()
 		CurrentTrackingTile = ActiveTileGroups[0].Tile;
 		CurrentTrackingTileIndex = 0;
 	}
+
+	if (AMRGameState* GS = GetWorld()->GetGameState<AMRGameState>())
+	{
+		GS->RegisterTileManager(this);
+	}
 }
 
 void ATileManager::Tick(float DeltaTime)
@@ -44,47 +51,117 @@ void ATileManager::Tick(float DeltaTime)
 
 	FVector TileEndLocation = CurrentTrackingTile->GetEndArrowTransform().GetLocation();
 	FVector PlayerLocation = PlayerCharacter->GetActorLocation();
-	FVector TileForwardVector = CurrentTrackingTile->GetActorForwardVector();
 
-	if (FVector::DotProduct(PlayerLocation - TileEndLocation, TileForwardVector) > 0.f)
+	FTileGroup& CurrentGroup = ActiveTileGroups[CurrentTrackingTileIndex];
+	FVector TileEndDirection = [this, CurrentGroup]()->FVector {
+		switch (CurrentGroup.ExitDirection)
+		{
+		case ETrackDirection::East:
+			return FVector(0, 1, 0);
+		case ETrackDirection::West:
+			return FVector(0, -1, 0);
+		case ETrackDirection::North:
+			return FVector(1, 0, 0);
+		case ETrackDirection::South:
+			return FVector(-1, 0, 0);
+		default:
+			return FVector::ZeroVector;
+		}
+		}();
+
+	if (FVector::DotProduct(PlayerLocation - TileEndLocation, TileEndDirection) > 0.f)
 	{
 		UE_LOG(LogTemp, Log, TEXT("DotProduct Result : %.2f <= %s,  %s"),
-		FVector::DotProduct(PlayerLocation - TileEndLocation, TileForwardVector),
+		FVector::DotProduct(PlayerLocation - TileEndLocation, TileEndDirection),
 			*(PlayerLocation - TileEndLocation).ToString(),
-			*TileForwardVector.ToString());
+			*TileEndDirection.ToString());
 		CurrentTrackingTileIndex++;
 
 		// [수정] TArray의 인덱스로 다음 추적 타일에 안전하게 접근합니다.
 		if (ActiveTileGroups.IsValidIndex(CurrentTrackingTileIndex))
 		{
 			CurrentTrackingTile = ActiveTileGroups[CurrentTrackingTileIndex].Tile;
-
 			SpawnTile();
 			DestroyOldestTileGroup();
 		}
+	}
+
+	FVector PlaneOrigin = CurrentGroup.Tile->GetEndArrowTransform().GetLocation();
+	FVector PlaneNormal = CurrentGroup.Tile->GetEndArrowTransform().GetRotation().GetRightVector();
+	FVector VectorToPlayer = PlayerLocation - PlaneOrigin;
+	//UE_LOG(LogTemp, Log, TEXT("DotProduct Result In Rotation Logic : %.2f <= %s,  %s"),
+		//FVector::DotProduct(VectorToPlayer, PlaneNormal),
+		//*(VectorToPlayer).ToString(),
+		//*PlaneNormal.ToString());
+	if (ensure(ActiveTileGroups.IsValidIndex(CurrentTrackingTileIndex)))
+	{
+		if (ensure(CurrentGroup.bIsTurnTrigger))
+		{
+			const float DotProduct = FVector::DotProduct(VectorToPlayer, PlaneNormal);
+			//UE_LOG(LogTemp, Log, TEXT("DotProduct Result In Rotation Logic : %.2f"), DotProduct);
+			if (DotProduct > 0.f)
+			{
+				AMRPlayerCharacter* PlayerCharacterRef = Cast<AMRPlayerCharacter>(PlayerCharacter);
+				if (ensure(PlayerCharacterRef))
+				{
+					PlayerCharacterRef->ExecuteForceTurn(CurrentTrackingTile->GetEndArrowTransform(), CurrentGroup.ExitDirection);
+					CurrentGroup.bIsTurnTrigger = false;
+				}
+			}
+		}
+
 	}
 }
 
 void ATileManager::SpawnTile()
 {
-	if (!TileClass)
+	if (TileClassMap.IsEmpty())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ATileManager: TileClass is not set!"));
 		return;
 	}
 
-	AMRTile* NewTile = GetWorld()->SpawnActor<AMRTile>(TileClass, NextSpawnPointTransform);
-	if (NewTile)
+	ETileType TypeToSpawn = ETileType::TurnLeft; // 추후 로직 구현 DecideNextTileType()
+	TSubclassOf<AMRTile>* FoundClassPtr = TileClassMap.Find(TypeToSpawn);
+
+	if (ensure(FoundClassPtr && *FoundClassPtr))
 	{
-		FTileGroup NewGroup;
-		NewGroup.Tile = NewTile;
+		TSubclassOf<AMRTile> ClassToSpawn = *FoundClassPtr;
+		AMRTile* NewTile = GetWorld()->SpawnActor<AMRTile>(ClassToSpawn, NextSpawnPointTransform);
+		if (ensure(NewTile))
+		{
+			FTileGroup NewGroup;
+			NewGroup.Tile = NewTile;
 
-		SpawnObjectsOnTile(NewTile, NewGroup.ContainedActors);
+			if (TypeToSpawn != ETileType::Straight)
+			{
+				int32 CastedType = static_cast<int32>(LastTileExitDirection);
+				switch (TypeToSpawn)
+				{
+				case ETileType::TurnLeft:
+					CastedType -= 1;
+					break;
+				case ETileType::TurnRight:
+					CastedType += 1;
+					break;
+				default:
+					ensureMsgf(false, TEXT("CalculateNextDirection received an unexpected TileType!"));
+					break;
+				}
+				LastTileExitDirection = static_cast<ETrackDirection>((CastedType + 4) % 4);
 
-		// [수정] TArray의 맨 뒤에 새 그룹을 추가합니다.
-		ActiveTileGroups.Add(NewGroup);
+				NewGroup.bIsTurnTrigger = true;
+			}
+			NewGroup.ExitDirection = LastTileExitDirection;
+			//
 
-		NextSpawnPointTransform = NewTile->GetEndArrowTransform();
+			SpawnObjectsOnTile(NewTile, NewGroup.ContainedActors);
+
+			// [수정] TArray의 맨 뒤에 새 그룹을 추가합니다.
+			ActiveTileGroups.Add(NewGroup);
+
+			NextSpawnPointTransform = NewTile->GetEndArrowTransform();
+		}
 	}
 }
 
@@ -132,7 +209,7 @@ void ATileManager::SpawnObjectsOnTile(AMRTile* TargetTile, TArray<TObjectPtr<AAc
 
 			FTransform SpawnTransform = Point->GetComponentTransform();
 			AActor* SpawnedObject = GetWorld()->SpawnActor<AActor>(ClassToSpawn, SpawnTransform);
-			UE_LOG(LogTemp, Log, TEXT("SpawnedComponentTransform : %s, %s"), *Point->GetComponentTransform().ToString(), *Point->GetFName().ToString());
+			//UE_LOG(LogTemp, Log, TEXT("SpawnedComponentTransform : %s, %s"), *Point->GetComponentTransform().ToString(), *Point->GetFName().ToString());
 			if (SpawnedObject)
 			{
 				OutSpawnedActors.Add(SpawnedObject);

@@ -8,6 +8,11 @@ AMRGameState::AMRGameState()
 	CurrentState = EMRGameState::WaitingToStart;
 }
 
+void AMRGameState::RegisterTileManager(ATileManager* Manager)
+{
+	TileManagerRef = Manager;
+}
+
 void AMRGameState::AddScore(int32 Amount)
 {
 	CurrentScore += Amount;
