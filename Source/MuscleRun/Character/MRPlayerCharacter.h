@@ -13,10 +13,22 @@
 #include "MRPlayerCharacter.generated.h"
 
 
+UENUM(BlueprintType)
+enum class ECharacterState : uint8
+{
+	ECS_Running		UMETA(DisplayName = "Running"),
+	ECS_Jumping		UMETA(DisplayName = "Jumping"),
+	ECS_Sliding		UMETA(DisplayName = "Sliding")
+};
+
+
+
 UCLASS()
 class MUSCLERUN_API AMRPlayerCharacter : public ACharacter
 {
 	GENERATED_BODY()
+
+
 
 public:
 	// Sets default values for this character's properties
@@ -38,6 +50,9 @@ public:
 	
 	// 점프 버퍼링 등의 조작감 개선 로직을 위해 Landed 함수를 오버라이드합니다.
 	virtual void Landed(const FHitResult& Hit) override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation")
+	UAnimMontage* JumpMontage;
 
 	// 현재 추적하고 있는 방향입니다. 이동 로직에서 사용합니다.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player|Movement|Lanes")
@@ -173,4 +188,22 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player|Movement|Jump", meta = (AllowPrivateAccess = "true"))
 	float JumpBufferDuration = 0.4f;
+
+	//캐릭터 상태변경 함수
+protected:
+	// 입력과 관련된 함수들
+	void Slide();
+	void StopSliding();
+
+	// 캐릭터의 이동 상태가 바뀔 때 호출되는 기본 함수를 오버라이드합니다. 점프 상태를 감지하는 데 매우 유용합니다.
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
+
+	// 현재 캐릭터 상태를 저장할 변수입니다.
+	// BlueprintReadOnly는 블루프린트에서 이 값을 읽을 수만 있게 하여 안정성을 높입니다.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	ECharacterState CharacterState;
+
+public:
+	// 애니메이션 블루프린트에서 현재 상태를 직접 가져갈 수 있도록 public 함수를 만듭니다.
+	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 };

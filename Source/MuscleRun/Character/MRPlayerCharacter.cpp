@@ -9,6 +9,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
+#include "Animation/AnimInstance.h"
 #include "Component/MRItemEffectManagerComponent.h"
 #include "Object/Item/ItemBaseActor.h"
 #include "Component/MRHealthComponent.h"
@@ -23,6 +24,9 @@ AMRPlayerCharacter::AMRPlayerCharacter()
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	// 기본 상태를 '달리기'로 초기화합니다.
+	CharacterState = ECharacterState::ECS_Running;
 
 	// --- 컴포넌트 계층 구조 설정 ---
 
@@ -92,6 +96,46 @@ void AMRPlayerCharacter::BeginPlay()
 		// "나(캐릭터)의 Tick은, 반드시 TileManager의 Tick이 끝난 후에 실행되어야 한다"
 		// 라고 엔진에게 명시적으로 알려줍니다.
 		AddTickPrerequisiteActor(TileManager);
+	}
+}
+
+void AMRPlayerCharacter::Slide()
+{
+	// 땅에 있을 때만 슬라이딩 가능
+	if (GetCharacterMovement()->IsMovingOnGround())
+	{
+		CharacterState = ECharacterState::ECS_Sliding;
+		// 여기에 실제 슬라이딩 로직 추가 (예: 콜리전 크기 변경, 속도 변경 등)
+		// 디버그 메시지 추가
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Yellow, TEXT("SLIDING STATE"));
+	}
+}
+
+void AMRPlayerCharacter::StopSliding()
+{
+	// 현재 슬라이딩 상태일 때만 달리기 상태로 변경
+	if (CharacterState == ECharacterState::ECS_Sliding)
+	{
+		CharacterState = ECharacterState::ECS_Running;
+		// 슬라이딩 종료 로직 추가 (예: 콜리전 크기 복구 등)
+	}
+}
+
+void AMRPlayerCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
+{
+	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+
+	// 이동 모드가 'Falling'(낙하 중)으로 바뀌었다면 점프 상태로 간주
+	if (GetCharacterMovement()->MovementMode == EMovementMode::MOVE_Falling)
+	{
+		CharacterState = ECharacterState::ECS_Jumping;
+		// 디버그 메시지 추가
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan, TEXT("JUMPING STATE"));
+	}
+	// 다시 땅으로 돌아오면(Walking) 달리기 상태로 변경
+	else if (GetCharacterMovement()->MovementMode == EMovementMode::MOVE_Walking)
+	{
+		CharacterState = ECharacterState::ECS_Running;
 	}
 }
 
@@ -215,12 +259,18 @@ void AMRPlayerCharacter::Jump()
 {
 	if (CanJump())
 	{
-		Super::Jump();
-	}
-	else
-	{
-		bWantsToJump = true;
-		GetWorld()->GetTimerManager().SetTimer(JumpBufferTimerHandler, this, &AMRPlayerCharacter::ClearJumpBuffer, JumpBufferDuration, false);
+		Super::Jump();  // 물리적으로 점프
+
+		UE_LOG(LogTemp, Warning, TEXT("JumpState"));
+
+		if (JumpMontage)
+		{
+			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+			if (AnimInstance)
+			{
+				AnimInstance->Montage_Play(JumpMontage, 1.0f);
+			}
+		}
 	}
 }
 
