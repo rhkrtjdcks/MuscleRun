@@ -1,6 +1,11 @@
 # Visual Studio 2015 user specific files
 .vs/
-
+/Content/ThirdPerson
+/Content/Test
+/Content/Characters
+/Content/Export
+/Content/Fab
+/Content/Maps
 # Compiled Object files
 *.slo
 *.lo
