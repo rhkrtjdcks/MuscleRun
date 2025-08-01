@@ -44,6 +44,8 @@ public:
 
 	void Heal(float Amount); // 체력을 회복하는 함수입니다.
 
+	float RetHealth() { return CurrentHealth; }
+
 	/*
 	* 여기 델리게이트 인자를 선언해주세요!
 	*/

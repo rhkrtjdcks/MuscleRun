@@ -3,19 +3,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
 #include "Delegates/DelegateCombinations.h"
+#include "Object/System/TileManager.h"
+#include "Data/MRDataType.h"
 #include "MRGameState.generated.h"
 
-
-/**
- * @brief 게임의 전체적인 상태를 정의하는 열거형입니다.
- */
-UENUM(BlueprintType)
-enum class EMRGameState : uint8
-{
-	WaitingToStart, // 시작 대기
-	InProgress,     // 게임 진행 중
-	GameOver        // 게임 오버
-};
 
 // 델리게이트 선언
 
@@ -31,11 +22,16 @@ class MUSCLERUN_API AMRGameState : public AGameStateBase
 public:
 	AMRGameState();
 
+	void RegisterTileManager(ATileManager* Manager);
+
 	// --- Public API (Getters) ---
 	// 다른 액터(특히 UI)들이 현재 게임 상태 정보를 읽어갈 수 있는 함수들입니다.
 
 	UFUNCTION(BlueprintPure, Category = "GameState")
-	int32 GetScore() const { return CurrentScore; }
+	int32 GetCurrentScore() const { return CurrentScore; }
+
+	UFUNCTION(BlueprintPure, Category = "GameState")
+	int32 GetHighScore() const { return HighScore; }
 
 	UFUNCTION(BlueprintPure, Category = "GameState")
 	float GetGameSpeedMultiplier() const { return GameSpeedMultiplier; }
@@ -50,10 +46,21 @@ public:
 	void SetGameSpeedMultiplier(float NewMultiplier);
 	void SetCurrentState(EMRGameState NewState);
 
+	void SaveHighScore();
+	void LoadHighScore();
+
 	// --- 델리게이트 변수들 (상태 및 점수 방송용) ---
 	
 	FOnGameScoreChanged OnScoreChanged;
 	FOnGameStateChanged OnStateChanged;
+
+protected:
+	/**
+	 * @brief 현재 월드에 존재하는 TileManager의 유일한 참조.
+	 * 다른 모든 액터는 이 변수를 통해 TileManager에 접근합니다.
+	 */
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Managers")
+	TObjectPtr<class ATileManager> TileManagerRef;
 
 private:
 	// --- 상태 변수들 ---
@@ -62,6 +69,9 @@ private:
 	// 현재 점수
 	UPROPERTY(VisibleAnywhere, Category = "GameState")
 	int32 CurrentScore;
+
+	UPROPERTY(VisibleAnywhere, Category = "GameState")
+	int32 HighScore;
 
 	// 현재 게임 속도 배율
 	UPROPERTY(VisibleAnywhere, Category = "GameState")
