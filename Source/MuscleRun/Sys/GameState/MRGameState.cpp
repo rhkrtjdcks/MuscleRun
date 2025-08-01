@@ -61,6 +61,6 @@ void AMRGameState::LoadHighScore()
 	UMRSaveGame* Loaded = Cast<UMRSaveGame>(UGameplayStatics::LoadGameFromSlot(TEXT("DefaultSlot"), 0));
 	if (Loaded)
 	{
-		Loaded->HighScore;
+		HighScore = Loaded->HighScore;
 	}
 }

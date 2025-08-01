@@ -42,7 +42,7 @@ private:
 	USoundBase* PickupSound;
 
 	UPROPERTY(EditAnywhere, Category = "Sound")
-	USoundBase* PickupSoundCue;
+	USoundBase* PickupSoundCue; // PickupSound를 랜덤하게 가능하게함. (선택사항)
 
 	UPROPERTY(EditAnywhere, Category = "Sound")
 	USoundBase* VanishSound;
@@ -57,7 +57,7 @@ protected:
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-	void DestroySelf();
+	void DestroySelf();  // 자기 자신(this)을 파괴한다.
 	void PlayPickupEffect();
 	void PlayVanishEffect();
 };

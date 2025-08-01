@@ -41,6 +41,7 @@ void UMRSaveManager::LoadGame()
 
 int32 UMRSaveManager::GetHighScore() const
 {
+	//현재 세이브 데이터(CurrentSaveGame)가 유효한지 확인한 뒤, 유효하면 HighScore를 반환하고, 아니면 기본값 0점을 반환합니다.
 	return CurrentSaveGame ? CurrentSaveGame->HighScore : 0;
 }
 
@@ -48,8 +49,11 @@ bool UMRSaveManager::UpdateHighScore(int32 NewScore)
 {
 	if (CurrentSaveGame && NewScore > CurrentSaveGame->HighScore)
 	{
+		//현재 세이브 데이터가 있고, 새로운 점수가 기존 최고 점수보다 높을 경우 → 최고 점수 갱신!
 		CurrentSaveGame->HighScore = NewScore;
+		//그리고 갱신했다면 true
 		return true;
 	}
+	// 안 했다면 false 반환
 	return false;
 }
