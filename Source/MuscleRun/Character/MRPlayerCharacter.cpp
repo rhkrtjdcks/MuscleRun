@@ -254,15 +254,17 @@ void AMRPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	}
 }
 
-// 점프를 오버라이드한 함수입니다. 점프 입력을 받고 버퍼링 시간을 잽니다.
+// AMRPlayerCharacter.cpp -> Jump() 함수 수정
 void AMRPlayerCharacter::Jump()
 {
 	if (CanJump())
 	{
-		Super::Jump();  // 물리적으로 점프
+		Super::Jump();// 물리적으로 점프시키는 이 코드만 남깁니다.
 
 		UE_LOG(LogTemp, Warning, TEXT("JumpState"));
 
+		/*
+		// 이 부분을 전부 주석 처리하거나 삭제하세요.
 		if (JumpMontage)
 		{
 			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
@@ -271,6 +273,7 @@ void AMRPlayerCharacter::Jump()
 				AnimInstance->Montage_Play(JumpMontage, 1.0f);
 			}
 		}
+		*/
 	}
 }
 
